@@ -7,30 +7,41 @@ using OxyPlot;
 using OxyPlot.Series;
 using System.Numerics;
 using MathNet.Numerics;
+using MathNet.Numerics.IntegralTransforms;
 
 namespace FourierTransas
 {
     public class FFTModel
     {
         public PlotModel Plot { get; private set; }
+
         public FFTModel()
         {
             Plot = new PlotModel { Title = "sample" };
-            Func<double, double> signal = k => Math.Sin(10 * 2 * Math.PI * k) + 0.5 * Math.Sin(5 * 2 * Math.PI * k);
             
-            double[] x = Generate.LinearRangeMap(0, (double)1 / 2000, 1, signal);
-            var x_fourier = x.Select(d => new Complex(d, 0)).ToArray();
-            MathNet.Numerics.IntegralTransforms.Fourier.Forward(x_fourier);
-            var orig = new LineSeries();
-            var transform = new LineSeries();
-            //todo: create correct datapoint
-            for (var i = 0; i < 2000; i++)
+            var len = 512; // freq
+            var sampleRate = 2 * len;
+            var h1 = Generate.Sinusoidal(len, sampleRate, 60, 10);
+            var h2 = Generate.Sinusoidal(len, sampleRate, 120, 20);
+
+            var samples = new Complex[len];
+            for (int i = 0; i < len; i++)
+                samples[i] = new Complex(h1[i] + h2[i], 0);
+
+            // time -> freq
+            Fourier.Forward(samples, FourierOptions.NoScaling);
+
+            var transformed = new LineSeries();
+            for (int i = 0; i < samples.Length/2; i++)
             {
-                orig.Points.Add(new DataPoint(i * 0.0005, x[i]));
-                transform.Points.Add(new DataPoint(i*0.0005, x_fourier[i].Real));
+                // амплитуда
+                var magnitude = Math.Sqrt(Math.Pow(samples[i].Real, 2) + Math.Pow(samples[i].Imaginary, 2))*2/len;
+                // фаза
+                var phase = Math.Atan2(samples[i].Imaginary, samples[i].Real);
+
+                transformed.Points.Add(new DataPoint(2*i, magnitude));
             }
-            Plot.Series.Add(orig);
-            Plot.Series.Add(transform);
+            Plot.Series.Add(transformed);
         }
     }
 }
