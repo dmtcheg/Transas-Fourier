@@ -31,7 +31,8 @@ namespace FourierTransas
             // time -> freq
             Fourier.Forward(samples, FourierOptions.NoScaling);
 
-            var transformed = new LineSeries();
+            var magnitudes = new LineSeries();
+            var phases = new LineSeries();
             for (int i = 0; i < samples.Length/2; i++)
             {
                 // амплитуда
@@ -39,9 +40,11 @@ namespace FourierTransas
                 // фаза
                 var phase = Math.Atan2(samples[i].Imaginary, samples[i].Real);
 
-                transformed.Points.Add(new DataPoint(2*i, magnitude));
+                magnitudes.Points.Add(new DataPoint(2*i, magnitude));
+                phases.Points.Add(new DataPoint(2 * i, phase));
             }
-            Plot.Series.Add(transformed);
+            Plot.Series.Add(magnitudes);
+            Plot.Series.Add(phases);
         }
     }
 }
