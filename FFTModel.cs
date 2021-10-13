@@ -19,7 +19,7 @@ namespace FourierTransas
         {
             Plot = new PlotModel { Title = "sample" };
             
-            var len = 512; // freq
+            var len = 200000; // freq
             var sampleRate = 2 * len;
             var h1 = Generate.Sinusoidal(len, sampleRate, 60, 10);
             var h2 = Generate.Sinusoidal(len, sampleRate, 120, 20);
@@ -32,19 +32,19 @@ namespace FourierTransas
             Fourier.Forward(samples, FourierOptions.NoScaling);
 
             var magnitudes = new LineSeries();
-            var phases = new LineSeries();
+            //var phases = new LineSeries();
             for (int i = 0; i < samples.Length/2; i++)
             {
                 // амплитуда
                 var magnitude = Math.Sqrt(Math.Pow(samples[i].Real, 2) + Math.Pow(samples[i].Imaginary, 2))*2/len;
                 // фаза
-                var phase = Math.Atan2(samples[i].Imaginary, samples[i].Real);
+                //var phase = Math.Atan2(samples[i].Imaginary, samples[i].Real);
 
                 magnitudes.Points.Add(new DataPoint(2*i, magnitude));
-                phases.Points.Add(new DataPoint(2 * i, phase));
+                //phases.Points.Add(new DataPoint(2 * i, phase));
             }
             Plot.Series.Add(magnitudes);
-            Plot.Series.Add(phases);
+            //Plot.Series.Add(phases);
         }
     }
 }
