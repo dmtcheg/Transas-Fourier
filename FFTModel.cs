@@ -19,7 +19,7 @@ namespace FourierTransas
         {
             Plot = new PlotModel { Title = "sample" };
             
-            var len = 200000; // freq
+            var len = 256; // freq
             var sampleRate = 2 * len;
             var h1 = Generate.Sinusoidal(len, sampleRate, 60, 10);
             var h2 = Generate.Sinusoidal(len, sampleRate, 120, 20);

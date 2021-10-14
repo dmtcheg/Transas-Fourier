@@ -20,7 +20,6 @@ namespace FourierTransas
         public ChartControl()
         {
             InitializeComponent();
-            this.DataContext = new FFTModel();
         }
     }
 }
