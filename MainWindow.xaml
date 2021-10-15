@@ -3,8 +3,13 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         
         xmlns:local="clr-namespace:FourierTransas"
-        Title="FFT" Height="450" Width="800">
-    
-    <local:ChartControl/>
+        Title="FFT" Height="800" Width="1000">
+
+    <Grid>
+        <StackPanel>
+            <local:ChartControl/>
+            <local:ChartControl/>
+        </StackPanel>
+    </Grid>
 
 </Window>
