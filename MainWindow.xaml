@@ -3,27 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         
         xmlns:control="clr-namespace:FourierTransas"
-        Title="FFT" Height="900" Width="800">
+        Title="FFT" Height="900" Width="1000">
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
-
-        <ContentControl
-            Grid.Row="0">
-            <control:ChartControl/>
-        </ContentControl>
-
-        <ContentControl
-            Grid.Row="1">
-            <control:ChartControl/>
-        </ContentControl>
-        
-        <ContentControl
-            Grid.Row="2">
-            <control:ChartControl/>
-        </ContentControl>
+        <control:ChartControl/>        
     </Grid>
 </Window>
