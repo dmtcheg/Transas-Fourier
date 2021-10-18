@@ -6,9 +6,6 @@
              xmlns:local="clr-namespace:FourierTransas"
              xmlns:oxy="http://oxyplot.org/wpf"
              mc:Ignorable="d" d:DesignHeight="900" d:DesignWidth="1000">
-    <UserControl.DataContext>
-        <local:FFTModel/>
-    </UserControl.DataContext>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
@@ -16,13 +13,13 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <ContentControl Grid.Row="0">
-            <oxy:PlotView Model ="{Binding Plot1}"/>
+            <oxy:PlotView Name="Chart0"/>
         </ContentControl>
         <ContentControl Grid.Row="1">
-            <oxy:PlotView Model ="{Binding Plot2}"/>
+            <oxy:PlotView Name="Chart1"/>
         </ContentControl>
         <ContentControl Grid.Row="2">
-            <oxy:PlotView Model ="{Binding Plot3}"/>
+            <oxy:PlotView Name="Chart2"/>
         </ContentControl>
     </Grid>
 </UserControl>
