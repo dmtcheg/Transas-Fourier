@@ -19,13 +19,6 @@ namespace FourierTransas
 
         public void OnStart()
         {
-            //todo: change 1 point and update plot?
-            //while (true)
-            //{
-            //    var series = Plot.Series[0] as LineSeries;
-            //    series.Points.RemoveAt(0);
-            //    series.Points.Add(new OxyPlot.DataPoint());
-            //}
         }
         public void OnStop()
         {

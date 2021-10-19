@@ -13,15 +13,16 @@ namespace FourierTransas
     /// </summary>
     public partial class App : Application
     {
-        PlotService service;
-        protected override void OnStartup(StartupEventArgs e)
-        {
-            base.OnStartup(e);
-        }
-        protected override void OnExit(ExitEventArgs e)
-        {
-            service.OnStop();
-            base.OnExit(e);
-        }
+        //PlotService service;
+        //protected override void OnStartup(StartupEventArgs e)
+        //{
+        //    base.OnStartup(e);
+        //    service.OnStart();
+        //}
+        //protected override void OnExit(ExitEventArgs e)
+        //{
+        //    service.OnStop();
+        //    base.OnExit(e);
+        //}
     }
 }

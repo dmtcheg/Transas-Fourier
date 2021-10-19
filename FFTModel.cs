@@ -22,7 +22,7 @@ namespace FourierTransas
             set
             {
                 plot = value;
-                OnPropertyChanged();
+                OnPropertyChanged("Plot");
             }
         }
 
@@ -50,7 +50,7 @@ namespace FourierTransas
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
-        protected void OnPropertyChanged([CallerMemberName] string name = null)
+        protected void OnPropertyChanged([CallerMemberName] string name = "")
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }

@@ -5,12 +5,13 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:FourierTransas"
              xmlns:oxy="http://oxyplot.org/wpf"
-             mc:Ignorable="d" d:DesignHeight="900" d:DesignWidth="1000">
+             mc:Ignorable="d" d:DesignHeight="700" d:DesignWidth="1000">
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="*"/>
+            <RowDefinition Height="200"/>
+            <RowDefinition Height="200"/>
+            <RowDefinition Height="200"/>
+            <RowDefinition Height="100"/>
         </Grid.RowDefinitions>
         <ContentControl Grid.Row="0">
             <oxy:PlotView Name="Chart0"/>
@@ -21,5 +22,7 @@
         <ContentControl Grid.Row="2">
             <oxy:PlotView Name="Chart2"/>
         </ContentControl>
+
+        <Button Click="Update_Click" Grid.Row="3"/>
     </Grid>
 </UserControl>
