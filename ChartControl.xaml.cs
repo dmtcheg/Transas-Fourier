@@ -1,7 +1,10 @@
 ﻿using OxyPlot;
 using OxyPlot.Series;
+using OxyPlot.Wpf;
+using System;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -18,22 +21,28 @@ namespace FourierTransas
             Chart1.Model = (Chart1.DataContext as FFTModel).Plot;
             Chart2.DataContext = new FFTModel(44100, 20);
             Chart2.Model = (Chart2.DataContext as FFTModel).Plot;
+
         }
 
         private bool update = false;
+
+        //todo: try async
         private void Update_Click(object sender, RoutedEventArgs e)
         {
             update = !update;
-            var points = (Chart0.Model.Series[0] as LineSeries).Points;
-            var len = points.Count;
-            //var timer = new Timer(UpdateSeries, new object[] { Chart0, i++ }, 0, 1000);
-            for (int i = 0; i <len && update; i++)
+            Action<PlotView> upd = (chart) =>
             {
-                points[i] = new DataPoint(i, points[i].Y + 1);
-                Chart0.Model.InvalidatePlot(true);
-                Thread.Sleep(100);
-            }
-            //timer.Dispose();
+                var pts = (chart.Model.Series[0] as LineSeries).Points;
+                var len = pts.Count;
+                for (int i = 0; i < len; i++)
+                {
+                    pts[i] = new DataPoint(i, pts[i].Y + 10);
+                    Chart0.InvalidatePlot(true);
+                    Thread.Sleep(1);
+                }
+            };
+            // or button
+            this.Dispatcher.BeginInvoke(upd, Chart0);
         }
 
         private void UpdateSeries(object obj)
