@@ -1,6 +1,7 @@
 ﻿using OxyPlot;
 using OxyPlot.Series;
 using OxyPlot.Wpf;
+using OxyPlot.SkiaSharp.Wpf;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -15,8 +16,12 @@ namespace FourierTransas
         public ChartControl()
         {
             InitializeComponent();
-            Chart0.DataContext = new FFTModel(3000, 64);
-            Chart0.Model = (Chart0.DataContext as FFTModel).Plot;
+            var view = new OxyPlot.SkiaSharp.Wpf.PlotView();
+            var model = new FFTModel(3000, 64);
+            view.DataContext = model;
+            view.Model = model.Plot;
+            Control0.Content = view;
+
             Chart1.DataContext = new FFTModel(60, 120);
             Chart1.Model = (Chart1.DataContext as FFTModel).Plot;
             Chart2.DataContext = new FFTModel(44100, 20);
@@ -26,33 +31,19 @@ namespace FourierTransas
 
         private bool update = false;
 
-        //todo: try async
         private void Update_Click(object sender, RoutedEventArgs e)
         {
             update = !update;
-            Action<PlotView> upd = (chart) =>
-            {
-                var pts = (chart.Model.Series[0] as LineSeries).Points;
-                var len = pts.Count;
-                for (int i = 0; i < len; i++)
-                {
-                    pts[i] = new DataPoint(i, pts[i].Y + 10);
-                    Chart0.InvalidatePlot(true);
-                    Thread.Sleep(1);
-                }
-            };
-            // or button
-            this.Dispatcher.BeginInvoke(upd, Chart0);
-        }
+            var view = Control0.Content as OxyPlot.SkiaSharp.Wpf.PlotView;
 
-        private void UpdateSeries(object obj)
-        {
-            var info = obj as object[];
-            var view = info[0] as OxyPlot.Wpf.PlotView;
-            int i = (int)info[1];
-            var points = (view.Model.Series[0] as LineSeries).Points;
-            points[i] = new DataPoint(i, points[i].Y + 1);
-            view.InvalidatePlot(true);
+            var pts = (view.Model.Series[0] as LineSeries).Points;
+            var len = pts.Count;
+            for (int i = 0; i < len && update; i++)
+            {
+                pts[i] = new DataPoint(i, pts[i].Y + 10);
+                view.Model.InvalidatePlot(false);
+                Thread.Sleep(500);
+            }
         }
     }
 }

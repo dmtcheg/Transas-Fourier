@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.ComponentModel;
 using OxyPlot;
 using OxyPlot.Series;
+using OxyPlot.SkiaSharp;
 using System.Numerics;
 using MathNet.Numerics;
 using MathNet.Numerics.IntegralTransforms;

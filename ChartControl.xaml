@@ -13,8 +13,7 @@
             <RowDefinition Height="200"/>
             <RowDefinition Height="100"/>
         </Grid.RowDefinitions>
-        <ContentControl Grid.Row="0">
-            <oxy:PlotView Name="Chart0"/>
+        <ContentControl Name="Control0" Grid.Row="0">
         </ContentControl>
         <ContentControl Grid.Row="1">
             <oxy:PlotView Name="Chart1"/>
