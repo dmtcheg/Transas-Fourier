@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using OxyPlot.SkiaSharp;
 
 namespace FourierTransas
 {
@@ -41,9 +42,16 @@ namespace FourierTransas
             for (int i = 0; i < len && update; i++)
             {
                 pts[i] = new DataPoint(i, pts[i].Y + 10);
-                view.Model.InvalidatePlot(false);
+                view.InvalidatePlot(true);
                 Thread.Sleep(500);
             }
+        }
+
+        private void SkiaRender()
+        {
+            var rc = new SkiaRenderContext();
+            rc.RenderTarget = RenderTarget.Screen;
+            
         }
     }
 }
