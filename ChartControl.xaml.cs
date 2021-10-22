@@ -46,9 +46,9 @@ namespace FourierTransas
             var len = pts.Count;
 
             var updated = new DataPoint[len];
-            Parallel.For(0, len, (x) => { updated[x] = new DataPoint(x, pts[x].Y + 10); });
-            view.Model.Series[0] = new LineSeries() {ItemsSource = updated};
-            view.InvalidatePlot(true);
+            Parallel.For(0, len,i => { updated[i] = new DataPoint(pts[i].X, pts[i].Y + 10); });
+            (model.Series[0] as LineSeries).ItemsSource = updated;
+            model.InvalidatePlot(true);
         }
 
         // private void SkiaRender(PlotModel model)
