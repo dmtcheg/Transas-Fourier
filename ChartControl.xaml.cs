@@ -16,6 +16,8 @@ namespace FourierTransas
 {
     public partial class ChartControl : UserControl
     {
+        //todo: correct render
+        
         public ChartControl()
         {
             InitializeComponent();
@@ -47,7 +49,10 @@ namespace FourierTransas
 
             var updated = new DataPoint[len];
             Parallel.For(0, len,i => { updated[i] = new DataPoint(pts[i].X, pts[i].Y + 10); });
-            (model.Series[0] as LineSeries).ItemsSource = updated;
+
+            var u = new LineSeries();
+            u.Points.AddRange(updated);
+            model.Series[0] = u;
             model.InvalidatePlot(true);
         }
 
