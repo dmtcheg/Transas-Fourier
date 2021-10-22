@@ -4,11 +4,13 @@ using OxyPlot.Wpf;
 using OxyPlot.SkiaSharp.Wpf;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using OxyPlot.SkiaSharp;
+using SkiaSharp;
 
 namespace FourierTransas
 {
@@ -27,7 +29,6 @@ namespace FourierTransas
             Chart1.Model = (Chart1.DataContext as FFTModel).Plot;
             Chart2.DataContext = new FFTModel(44100, 20);
             Chart2.Model = (Chart2.DataContext as FFTModel).Plot;
-
         }
 
         private bool update = false;
@@ -35,23 +36,26 @@ namespace FourierTransas
         private void Update_Click(object sender, RoutedEventArgs e)
         {
             update = !update;
-            var view = Control0.Content as OxyPlot.SkiaSharp.Wpf.PlotView;
+            var view = (Control0.Content as OxyPlot.SkiaSharp.Wpf.PlotView);
+            var model = view.Model;
 
-            var pts = (view.Model.Series[0] as LineSeries).Points;
-            var len = pts.Count;
-            for (int i = 0; i < len && update; i++)
-            {
-                pts[i] = new DataPoint(i, pts[i].Y + 10);
-                view.InvalidatePlot(true);
-                Thread.Sleep(500);
-            }
-        }
-
-        private void SkiaRender()
-        {
-            var rc = new SkiaRenderContext();
+            var rc = new SkiaRenderContext() {SkCanvas = new SKCanvas(new SKBitmap(1000, 600))};
             rc.RenderTarget = RenderTarget.Screen;
-            
+
+            var pts = (model.Series[0] as LineSeries).Points;
+            var len = pts.Count;
+
+            var updated = new DataPoint[len];
+            Parallel.For(0, len, (x) => { updated[x] = new DataPoint(x, pts[x].Y + 10); });
+            view.Model.Series[0] = new LineSeries() {ItemsSource = updated};
+            view.InvalidatePlot(true);
         }
+
+        // private void SkiaRender(PlotModel model)
+        // {
+        //     var rc = new SkiaRenderContext();
+        //     rc.RenderTarget = RenderTarget.Screen;
+        //     (model as IPlotModel).Render(rc, model.PlotArea);
+        // }
     }
 }
