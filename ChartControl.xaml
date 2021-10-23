@@ -22,6 +22,6 @@
             <oxy:PlotView Name="Chart2"/>
         </ContentControl>
 
-        <Button Name="UpdateButton" Click="Update_Click" Grid.Row="3"/>
+        <Button Name="UpdateButton" Content="start update" Click="Update_Click" Grid.Row="3"/>
     </Grid>
 </UserControl>
