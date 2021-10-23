@@ -11,13 +11,14 @@ using System.Windows;
 using System.Windows.Controls;
 using OxyPlot.SkiaSharp;
 using SkiaSharp;
+using  System.Timers;
 
 namespace FourierTransas
 {
     public partial class ChartControl : UserControl
     {
         //todo: correct render
-        
+
         public ChartControl()
         {
             InitializeComponent();
@@ -33,34 +34,25 @@ namespace FourierTransas
             Chart2.Model = (Chart2.DataContext as FFTModel).Plot;
         }
 
-        private bool update = false;
-
+        private bool flag = false;
+        
         private void Update_Click(object sender, RoutedEventArgs e)
         {
-            update = !update;
+            // var rc = new SkiaRenderContext() {SkCanvas = new SKCanvas(new SKBitmap(1000, 600))};
+            // rc.RenderTarget = RenderTarget.Screen;
+            
+            flag = !flag;
             var view = (Control0.Content as OxyPlot.SkiaSharp.Wpf.PlotView);
-            var model = view.Model;
-
-            var rc = new SkiaRenderContext() {SkCanvas = new SKCanvas(new SKBitmap(1000, 600))};
-            rc.RenderTarget = RenderTarget.Screen;
-
-            var pts = (model.Series[0] as LineSeries).Points;
-            var len = pts.Count;
-
-            var updated = new DataPoint[len];
-            Parallel.For(0, len,i => { updated[i] = new DataPoint(pts[i].X, pts[i].Y + 10); });
-
-            var u = new LineSeries();
-            u.Points.AddRange(updated);
-            model.Series[0] = u;
-            model.InvalidatePlot(true);
+            var points = (view.Model.Series[0] as LineSeries).Points;
+            var length = points.Count;
+            
+            var timer = new System.Timers.Timer(1000);
+            timer.Elapsed += (obj, ev) =>
+            {
+                Parallel.For(0, length, i => { points[i] = new DataPoint(points[i].X, points[i].Y +10); });
+                view.InvalidatePlot(true);
+            };
+            timer.Enabled = flag;
         }
-
-        // private void SkiaRender(PlotModel model)
-        // {
-        //     var rc = new SkiaRenderContext();
-        //     rc.RenderTarget = RenderTarget.Screen;
-        //     (model as IPlotModel).Render(rc, model.PlotArea);
-        // }
     }
 }

@@ -30,8 +30,8 @@ namespace FourierTransas
         public FFTModel(double frequency, double amplitude)
         {
             Plot = new PlotModel { Title = "chart" };
-            var len = 50000; // freq
-            var sampleRate = 4 * len;
+            var len = 200000; // freq
+            var sampleRate = 2 * len;
             var wave = Generate.Sinusoidal(len, sampleRate, frequency, amplitude);
             var samples = new Complex[len];
             for (int i = 0; i < len; i++)
