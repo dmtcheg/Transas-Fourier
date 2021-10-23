@@ -42,15 +42,18 @@ namespace FourierTransas
             // rc.RenderTarget = RenderTarget.Screen;
             
             flag = !flag;
-            var view = (Control0.Content as OxyPlot.SkiaSharp.Wpf.PlotView);
-            var points = (view.Model.Series[0] as LineSeries).Points;
-            var length = points.Count;
+            var view0 = (Control0.Content as OxyPlot.SkiaSharp.Wpf.PlotView);
+            var points0 = (view0.Model.Series[0] as LineSeries).Points;
+            var points1 = (Chart1.Model.Series[0] as LineSeries).Points;
+            var length = points0.Count;
             
             var timer = new System.Timers.Timer(1000);
             timer.Elapsed += (obj, ev) =>
             {
-                Parallel.For(0, length, i => { points[i] = new DataPoint(points[i].X, points[i].Y +10); });
-                view.InvalidatePlot(true);
+                Parallel.For(0, length, i => { points0[i] = new DataPoint(points0[i].X, points0[i].Y +5); });
+                Parallel.For(0, length, i => { points1[i] = new DataPoint(points1[i].X, points1[i].Y + 4); });
+                view0.InvalidatePlot(true);
+                Chart1.InvalidatePlot(true);
             };
             timer.Enabled = flag;
         }
