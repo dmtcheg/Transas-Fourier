@@ -2,9 +2,8 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:FourierTransas"
-             xmlns:oxy="http://oxyplot.org/wpf"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:skia="clr-namespace:OxyPlot.SkiaSharp.Wpf;assembly=OxyPlot.SkiaSharp.Wpf"
              mc:Ignorable="d" d:DesignHeight="700" d:DesignWidth="1000">
     <Grid>
         <Grid.RowDefinitions>
@@ -14,12 +13,13 @@
             <RowDefinition Height="100"/>
         </Grid.RowDefinitions>
         <ContentControl Name="Control0" Grid.Row="0">
+            <skia:PlotView Name ="Chart0"/>
         </ContentControl>
         <ContentControl Grid.Row="1">
-            <oxy:PlotView Name="Chart1"/>
+            <skia:PlotView Name="Chart1"/>
         </ContentControl>
         <ContentControl Grid.Row="2">
-            <oxy:PlotView Name="Chart2"/>
+            <skia:PlotView Name="Chart2"/>
         </ContentControl>
 
         <Button Name="UpdateButton" Content="start update" Click="Update_Click" Grid.Row="3"/>

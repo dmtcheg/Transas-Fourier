@@ -1,6 +1,5 @@
 ﻿using OxyPlot;
 using OxyPlot.Series;
-using OxyPlot.Wpf;
 using OxyPlot.SkiaSharp.Wpf;
 using System;
 using System.Collections.Generic;
@@ -11,51 +10,58 @@ using System.Windows;
 using System.Windows.Controls;
 using OxyPlot.SkiaSharp;
 using SkiaSharp;
-using  System.Timers;
+using System.Timers;
 
 namespace FourierTransas
 {
     public partial class ChartControl : UserControl
     {
-        //todo: correct render
-
         public ChartControl()
         {
             InitializeComponent();
-            var view = new OxyPlot.SkiaSharp.Wpf.PlotView();
-            var model = new FFTModel(3000, 64);
-            view.DataContext = model;
-            view.Model = model.Plot;
-            Control0.Content = view;
+            var rc = new SkiaRenderContext() {SkCanvas = new SKCanvas(new SKBitmap(1000, 700))};
+            rc.RenderTarget = RenderTarget.PixelGraphic;
 
-            Chart1.DataContext = new FFTModel(60, 120);
-            Chart1.Model = (Chart1.DataContext as FFTModel).Plot;
-            Chart2.DataContext = new FFTModel(44100, 20);
-            Chart2.Model = (Chart2.DataContext as FFTModel).Plot;
+            var models = new FFTModel[]
+            {
+                new(3000, 64),
+                new(60, 120),
+                new(44100, 20)
+            };
+            var charts = new PlotView[]
+            {
+                Chart0,
+                Chart1,
+                Chart2
+            };
+            for (var i = 0; i < 3; i++)
+            {
+                charts[i].DataContext = models[i];
+                charts[i].Model = models[i].Plot;
+                (charts[i].Model as IPlotModel).Render(rc, charts[i].Model.PlotArea);
+            }
         }
 
         private bool flag = false;
-        
+
         private void Update_Click(object sender, RoutedEventArgs e)
         {
-            // var rc = new SkiaRenderContext() {SkCanvas = new SKCanvas(new SKBitmap(1000, 600))};
-            // rc.RenderTarget = RenderTarget.Screen;
-            
+            var rc = new SkiaRenderContext() {SkCanvas = new SKCanvas(new SKBitmap(1000, 700))};
+            rc.RenderTarget = RenderTarget.PixelGraphic;
+
             flag = !flag;
-            var view0 = (Control0.Content as OxyPlot.SkiaSharp.Wpf.PlotView);
-            var points0 = (view0.Model.Series[0] as LineSeries).Points;
-            var points1 = (Chart1.Model.Series[0] as LineSeries).Points;
-            var points2 = (Chart2.Model.Series[0] as LineSeries).Points;
-            var length = points0.Count;
-            
+            var charts = new PlotView[] {Chart0, Chart1, Chart2};
+            var points = new List<DataPoint>[3];
+            for (var i = 0; i < 3; i++) points[i] = (charts[i].Model.Series[0] as LineSeries).Points;
+            var length = points[0].Count;
             var timer = new System.Timers.Timer(1000);
             timer.Elapsed += (obj, ev) =>
             {
-                Parallel.For(0, length, i => { points0[i] = new DataPoint(points0[i].X, points0[i].Y +5); });
-                Parallel.For(0, length, i => { points1[i] = new DataPoint(points1[i].X, points1[i].Y + 4); });
-                Parallel.For(0, length, i => { points2[i] = new DataPoint(points2[i].X, points2[i].Y + 3); });
+                Parallel.For(0, length, i => { points[0][i] = new DataPoint(points[0][i].X, points[0][i].Y + 5); });
+                Parallel.For(0, length, i => { points[1][i] = new DataPoint(points[1][i].X, points[1][i].Y + 4); });
+                Parallel.For(0, length, i => { points[2][i] = new DataPoint(points[2][i].X, points[2][i].Y + 3); });
 
-                view0.InvalidatePlot(true);
+                Chart0.InvalidatePlot(true);
                 Chart1.InvalidatePlot(true);
                 Chart2.InvalidatePlot(true);
             };
