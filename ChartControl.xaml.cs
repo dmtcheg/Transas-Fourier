@@ -24,9 +24,9 @@ namespace FourierTransas
 
             var models = new FFTModel[]
             {
-                new(3000, 64),
-                new(60, 120),
-                new(44100, 20)
+                new(2000, 15),
+                new(6000, 35),
+                new(4400, 65)
             };
             var charts = new PlotView[]
             {
@@ -48,24 +48,32 @@ namespace FourierTransas
         {
             var rc = new SkiaRenderContext() {SkCanvas = new SKCanvas(new SKBitmap(1000, 700))};
             rc.RenderTarget = RenderTarget.PixelGraphic;
-
             flag = !flag;
+            
             var charts = new PlotView[] {Chart0, Chart1, Chart2};
             var points = new List<DataPoint>[3];
             for (var i = 0; i < 3; i++) points[i] = (charts[i].Model.Series[0] as LineSeries).Points;
             var length = points[0].Count;
-            var timer = new System.Timers.Timer(1000);
+            var step = 50;
+            
+            // optional: if (2n click) then timer stop
+            var timer = new System.Timers.Timer(100);
             timer.Elapsed += (obj, ev) =>
             {
-                Parallel.For(0, length, i => { points[0][i] = new DataPoint(points[0][i].X, points[0][i].Y + 5); });
-                Parallel.For(0, length, i => { points[1][i] = new DataPoint(points[1][i].X, points[1][i].Y + 4); });
-                Parallel.For(0, length, i => { points[2][i] = new DataPoint(points[2][i].X, points[2][i].Y + 3); });
-
+                for(int i=0; i<3; i++)
+                {
+                    var first = points[i][0];
+                    for (int j = 0; j < length-step; j+=step)
+                    {
+                        points[i][j] = new DataPoint(points[i][j].X,points[i][j+step].Y);
+                    }
+                    points[i][length - step] = new DataPoint(points[i][length - step].X, first.Y);
+                };
                 Chart0.InvalidatePlot(true);
                 Chart1.InvalidatePlot(true);
                 Chart2.InvalidatePlot(true);
             };
-            timer.Enabled = flag;
+            timer.Enabled = true;
         }
     }
 }

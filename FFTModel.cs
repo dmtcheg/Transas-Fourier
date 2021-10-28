@@ -31,8 +31,17 @@ namespace FourierTransas
         {
             Plot = new PlotModel { Title = "chart" };
             var len = 200000; // freq
+            var peakCount = 200;
             var sampleRate = 2 * len;
-            var wave = Generate.Sinusoidal(len, sampleRate, frequency, amplitude);
+            var wave = new double[len];
+            for (int i = 0; i < peakCount; i++)
+            {
+                var gen = Generate.Sinusoidal(len, sampleRate, frequency*(i+1), amplitude+i);
+                for (int j = 0; j < len; j++)
+                {
+                    wave[j] += gen[j];
+                }
+            }
             var samples = new Complex[len];
             for (int i = 0; i < len; i++)
             {
