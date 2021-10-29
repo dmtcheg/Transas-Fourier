@@ -55,10 +55,10 @@ namespace FourierTransas
             var points = new List<DataPoint>[3];
             for (var i = 0; i < 3; i++) points[i] = (charts[i].Model.Series[0] as LineSeries).Points;
             var length = points[0].Count;
-            var step = 50;
+            var step = 1;
             
             // optional: if (2n click) then timer stop
-            var timer = new System.Timers.Timer(100);
+            var timer = new System.Timers.Timer(50);
             timer.Elapsed += (obj, ev) =>
             {
                 // var w = new Stopwatch();
