@@ -3,6 +3,7 @@ using OxyPlot.Series;
 using OxyPlot.SkiaSharp.Wpf;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -60,18 +61,20 @@ namespace FourierTransas
             var timer = new System.Timers.Timer(100);
             timer.Elapsed += (obj, ev) =>
             {
-                for(int i=0; i<3; i++)
+                // var w = new Stopwatch();
+                // w.Start();
+                Parallel.For(0, 3, i=>
                 {
                     var first = points[i][0];
                     for (int j = 0; j < length-step; j+=step)
                     {
-                        points[i][j] = new DataPoint(points[i][j].X,points[i][j+step].Y);
+                        points[i][j] = new DataPoint(points[i][j].X, points[i][j+step].Y);
                     }
                     points[i][length - step] = new DataPoint(points[i][length - step].X, first.Y);
-                };
-                Chart0.InvalidatePlot(true);
-                Chart1.InvalidatePlot(true);
-                Chart2.InvalidatePlot(true);
+                    charts[i].InvalidatePlot(true);
+                });
+                // w.Stop();
+                // Console.WriteLine(w.ElapsedTicks);
             };
             timer.Enabled = true;
         }

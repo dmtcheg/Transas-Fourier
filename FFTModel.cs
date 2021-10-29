@@ -56,6 +56,8 @@ namespace FourierTransas
                 var magnitude = Math.Sqrt(Math.Pow(samples[i].Real, 2) + Math.Pow(samples[i].Imaginary, 2)) * 2 / len;
                 magnitudes.Points.Add(new DataPoint(2 * i, magnitude));
             }
+
+            magnitudes.Decimator = Decimator.Decimate;
             Plot.Series.Add(magnitudes);
         }
 
