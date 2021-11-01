@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -24,7 +23,7 @@ namespace FourierTransas
         {
             InitializeComponent();
             var rc = new SkiaRenderContext() {SkCanvas = new SKCanvas(new SKBitmap(1000, 700))};
-            rc.RenderTarget = RenderTarget.PixelGraphic;
+            rc.RenderTarget = RenderTarget.Screen;
 
             var models = new FFTModel[]
             {
@@ -47,6 +46,7 @@ namespace FourierTransas
         }
 
         private bool flag = false;
+        private Timer timer = new Timer(100);
 
         //debug
         // sync 300-400 ms 315 в конце
@@ -58,8 +58,6 @@ namespace FourierTransas
         
         private void Update_Click(object sender, RoutedEventArgs e)
         {
-            var rc = new SkiaRenderContext() {SkCanvas = new SKCanvas(new SKBitmap(1000, 700))};
-            rc.RenderTarget = RenderTarget.PixelGraphic;
             flag = !flag;
 
             var charts = new PlotView[] {Chart0, Chart1, Chart2};
@@ -70,9 +68,8 @@ namespace FourierTransas
             var r = new Random();
             double sum = 0;
             int k = 0;
-
             // optional: if (2n click) then timer stop
-            var timer = new System.Timers.Timer(50);
+            timer.Enabled = flag;
             timer.Elapsed += (obj, ev) =>
             {
                 double[] gen = Generate.Sinusoidal(length, length * 2, r.Next(0, 199999), r.Next(0, 100));
@@ -87,7 +84,6 @@ namespace FourierTransas
                 {
                     gen[j] = Math.Sqrt(Math.Pow(complex[j].Real, 2) + Math.Pow(complex[j].Imaginary, 2)) * 2 / length;
                 }
-
                 var w = new Stopwatch();
                 w.Start();
                 for(int i= 0; i<3; i++)
@@ -103,7 +99,6 @@ namespace FourierTransas
                 k++;
                 Console.WriteLine(sum/k);
             };
-            timer.Enabled = true;
         }
     }
 }
