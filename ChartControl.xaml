@@ -4,13 +4,14 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:skia="clr-namespace:OxyPlot.SkiaSharp.Wpf;assembly=OxyPlot.SkiaSharp.Wpf"
-             mc:Ignorable="d" d:DesignHeight="700" d:DesignWidth="1000">
+             mc:Ignorable="d" d:DesignHeight="850" d:DesignWidth="1000">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="200"/>
             <RowDefinition Height="200"/>
             <RowDefinition Height="200"/>
             <RowDefinition Height="100"/>
+            <RowDefinition Height="50"/>
         </Grid.RowDefinitions>
         <ContentControl Name="Control0" Grid.Row="0">
             <skia:PlotView Name ="Chart0"/>
@@ -21,7 +22,10 @@
         <ContentControl Grid.Row="2">
             <skia:PlotView Name="Chart2"/>
         </ContentControl>
+        <ContentControl Grid.Row="3">
+            <skia:PlotView Name="UsageChart"/>
+        </ContentControl>
 
-        <Button Name="UpdateButton" Content="start update" Click="Update_Click" Grid.Row="3"/>
+        <Button Name="UpdateButton" Content="start update" Click="Update_Click" Grid.Row="4"/>
     </Grid>
 </UserControl>

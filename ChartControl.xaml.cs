@@ -22,7 +22,7 @@ namespace FourierTransas
         public ChartControl()
         {
             InitializeComponent();
-            SkiaRenderContext rc = new SkiaRenderContext() {SkCanvas = new SKCanvas(new SKBitmap(1000, 700))};
+            SkiaRenderContext rc = new SkiaRenderContext() {SkCanvas = new SKCanvas(new SKBitmap(1000, 850))};
             rc.RenderTarget = RenderTarget.Screen;
 
             FFTModel[] models = new FFTModel[]
@@ -43,20 +43,28 @@ namespace FourierTransas
                 plots[i].Model = models[i].Plot;
                 (plots[i].Model as IPlotModel).Render(rc, plots[i].Model.PlotArea);
             }
+
+            var procSeries = new LineSeries();
             points = new List<DataPoint>[]
             {
                 (Chart0.Model.Series[0] as LineSeries).Points,
                 (Chart1.Model.Series[0] as LineSeries).Points,
                 (Chart2.Model.Series[0] as LineSeries).Points,
+                procSeries.Points
             };
+
+            var usage = new PlotModel() {Title = "cpu usage"};
+            usage.Series.Add(procSeries);
+            ((IPlotModel) usage).Render(rc, usage.PlotArea);
+            UsageChart.Model = usage;
         }
 
         private bool flag = false;
-        private Timer timer = new Timer(100);
+        private Timer timer = new Timer(500);
         private PlotView[] plots;
         List<DataPoint>[] points;
         private PerformanceCounter _counter;
-        
+
         //debug
         // sync 300-400 ms 315 в конце
         // parallel 360-400
@@ -68,7 +76,8 @@ namespace FourierTransas
         private void Update_Click(object sender, RoutedEventArgs e)
         {
             flag = !flag;
-            _counter = new PerformanceCounter("Process", "% Processor Time", "_Total");
+            Process p = Process.GetCurrentProcess();
+            _counter = new PerformanceCounter("Process", "% Processor Time", p.ProcessName);
             timer.Enabled = flag;
             if (flag)
             {
@@ -106,14 +115,19 @@ namespace FourierTransas
             }
         }
 
+        private int k = 0;
+
         private void CheckCPUUsage(object sender, ElapsedEventArgs e)
         {
             // todo: fix to app cpu usage
-            double limit = 300.0; // measure?
-            if (_counter.NextValue() > limit)
-            {
-                timer.Interval *= (limit / _counter.NextValue());
-            }
+            // double limit = 300.0; // measure?
+            // if (_counter.NextValue() > limit)
+            // {
+            //     timer.Interval *= (limit / _counter.NextValue());
+            // }
+
+            points[3].Add(new DataPoint(k++, _counter.NextValue()));
+            UsageChart.InvalidatePlot(true);
         }
     }
 }
