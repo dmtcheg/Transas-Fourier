@@ -21,8 +21,13 @@ namespace FourierTransas
     {
         public ChartControl()
         {
+            timer = new Timer(100);
+            _counter = new PerformanceCounter("Process", "% Processor Time", Process.GetCurrentProcess().ProcessName);
+            r = new Random();
+            
+            
             InitializeComponent();
-            SkiaRenderContext rc = new SkiaRenderContext() {SkCanvas = new SKCanvas(new SKBitmap(1000, 850))};
+            SkiaRenderContext rc = new SkiaRenderContext() {SkCanvas = new SKCanvas(new SKBitmap(1000, 700))};
             rc.RenderTarget = RenderTarget.Screen;
 
             FFTModel[] models = new FFTModel[]
@@ -52,6 +57,7 @@ namespace FourierTransas
                 (Chart2.Model.Series[0] as LineSeries).Points,
                 procSeries.Points
             };
+            length = points[0].Count;
 
             var usage = new PlotModel() {Title = "cpu usage"};
             usage.Series.Add(procSeries);
@@ -59,12 +65,14 @@ namespace FourierTransas
             UsageChart.Model = usage;
         }
 
-        private bool flag = false;
-        private Timer timer = new Timer(500);
         private PlotView[] plots;
         List<DataPoint>[] points;
-        private PerformanceCounter _counter;
-
+        private int length;
+        private bool flag = false;
+        private Timer timer;
+        PerformanceCounter _counter;
+        private Random r;
+        
         //debug
         // sync 300-400 ms 315 в конце
         // parallel 360-400
@@ -72,12 +80,9 @@ namespace FourierTransas
         //release
         // sync 50-67ms
         // parallel 80-90ms
-
         private void Update_Click(object sender, RoutedEventArgs e)
         {
             flag = !flag;
-            Process p = Process.GetCurrentProcess();
-            _counter = new PerformanceCounter("Process", "% Processor Time", p.ProcessName);
             timer.Enabled = flag;
             if (flag)
             {
@@ -88,9 +93,6 @@ namespace FourierTransas
 
         private void UpdatePlot(object sender, ElapsedEventArgs e)
         {
-            Random r = new Random();
-
-            int length = points[0].Count;
             double[] gen = Generate.Sinusoidal(length, length * 2, r.Next(0, 199999), r.Next(0, 100));
             Complex[] complex = new Complex[length];
             for (int j = 0; j < length; j++)
@@ -110,24 +112,22 @@ namespace FourierTransas
                 {
                     points[i][j] = new DataPoint(points[i][j].X, points[i][j].Y + gen[j]);
                 }
-
                 plots[i].InvalidatePlot(true);
             }
         }
 
         private int k = 0;
+        private float limit = 30;
 
         private void CheckCPUUsage(object sender, ElapsedEventArgs e)
         {
-            // todo: fix to app cpu usage
-            // double limit = 300.0; // measure?
-            // if (_counter.NextValue() > limit)
-            // {
-            //     timer.Interval *= (limit / _counter.NextValue());
-            // }
-
-            points[3].Add(new DataPoint(k++, _counter.NextValue()));
+            float v = _counter.NextValue()/ Environment.ProcessorCount;
+            points[3].Add(new DataPoint(k++, v));
             UsageChart.InvalidatePlot(true);
+            if (Math.Abs(v-limit)<5)
+            {
+                timer.Interval *= (limit / v);
+            }
         }
     }
 }
