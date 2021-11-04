@@ -6,26 +6,29 @@
              xmlns:skia="clr-namespace:OxyPlot.SkiaSharp.Wpf;assembly=OxyPlot.SkiaSharp.Wpf"
              mc:Ignorable="d" d:DesignHeight="700" d:DesignWidth="1000">
     <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="600"/>
+            <ColumnDefinition Width="600"/>
+        </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
-            <RowDefinition Height="150"/>
-            <RowDefinition Height="150"/>
-            <RowDefinition Height="150"/>
+            <RowDefinition Height="200"/>
+            <RowDefinition Height="200"/>
             <RowDefinition Height="200"/>
             <RowDefinition Height="50"/>
         </Grid.RowDefinitions>
-        <ContentControl Name="Control0" Grid.Row="0">
-            <skia:PlotView Name ="Chart0"/>
+        <ContentControl Grid.Column="0" Name="Control0" Grid.Row="0">
+            <skia:PlotView Name ="PlotView0"/>
         </ContentControl>
-        <ContentControl Grid.Row="1">
-            <skia:PlotView Name="Chart1"/>
+        <ContentControl Grid.Column="0" Grid.Row="1">
+            <skia:PlotView Name="PlotView1"/>
         </ContentControl>
-        <ContentControl Grid.Row="2">
-            <skia:PlotView Name="Chart2"/>
+        <ContentControl Grid.Column="0" Grid.Row="2">
+            <skia:PlotView Name="PlotView2"/>
         </ContentControl>
-        <ContentControl Grid.Row="3">
-            <skia:PlotView Name="UsageChart"/>
+        <ContentControl Grid.Column="1" Grid.Row="0">
+            <skia:PlotView Name="CpuPlotView"/>
         </ContentControl>
 
-        <Button Name="UpdateButton" Content="start update" Click="Update_Click" Grid.Row="4"/>
+        <Button Grid.Column="0" Grid.Row="3" Name="UpdateButton" Content="start update" Click="Update_Click"/>
     </Grid>
 </UserControl>
