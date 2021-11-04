@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -16,18 +17,17 @@ namespace FourierTransas
     {
         PerformanceCounter _cpuCounter =
             new PerformanceCounter("Process", "% Processor Time", Process.GetCurrentProcess().ProcessName);
-        PerformanceCounter _ramCounter = new PerformanceCounter("Memory", "% Committed Bytes In Use");
         private DispatcherTimer _dTimer;
 
         public PerformanceControl()
         {
             InitializeComponent();
-            SkiaRenderContext rc = new SkiaRenderContext() {SkCanvas = new SKCanvas(new SKBitmap(1000, 700))};
+            SkiaRenderContext rc = new SkiaRenderContext() {SkCanvas = new SKCanvas(new SKBitmap(300, 300))};
             rc.RenderTarget = RenderTarget.Screen;
             
             var resourceModel = new PlotModel();
             var s = new BarSeries();
-            s.Items.Add(new BarItem(_ramCounter.NextValue()));
+            s.Items.Add(new BarItem(Process.GetCurrentProcess().WorkingSet64/1048576));
             s.Items.Add(new BarItem(_cpuCounter.NextValue()/Environment.ProcessorCount));
             resourceModel.Series.Add(s);
             resourceModel.Axes.Add(new CategoryAxis
@@ -47,19 +47,27 @@ namespace FourierTransas
 
         private void PerformanceBar(object sender, EventArgs e)
         {
-            (PerformancePlotView.Model.Series[0] as BarSeries).Items[0] = new BarItem(_ramCounter.NextValue());
+            Process.GetCurrentProcess().Refresh();
+            (PerformancePlotView.Model.Series[0] as BarSeries).Items[0] = new BarItem(Process.GetCurrentProcess().WorkingSet64/1048576);
             (PerformancePlotView.Model.Series[0] as BarSeries).Items[1] = new BarItem(_cpuCounter.NextValue()/Environment.ProcessorCount);
             PerformancePlotView.InvalidatePlot(true);
         }
 
         private void PerformancePlotView_OnMouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            Window resourceWindow = new Window
+
+            Thread resourceThread = new Thread(delegate()
             {
-                Title = "Использование ресурсов",
-                Content = new ResourceControl()
-            };
-            resourceWindow.ShowDialog();
+                Window resourceWindow = new Window
+                {
+                    Title = "Использование ресурсов",
+                    Content = new ResourceControl(_cpuCounter)
+                };
+                resourceWindow.ShowDialog();
+                Dispatcher.Run();
+            });
+            resourceThread.SetApartmentState(ApartmentState.STA);
+            resourceThread.Start();
         }
     }
 }
