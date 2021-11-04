@@ -7,7 +7,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Threading;
-using System.Windows;
 using System.Windows.Controls;
 using OxyPlot.SkiaSharp;
 using SkiaSharp;
@@ -61,23 +60,22 @@ namespace FourierTransas
                 (PlotView2.Model.Series[0] as LineSeries).Points,
             };
             length = points[0].Count;
-
-            var usage = new PlotModel() {Title = "cpu usage"};
-            usage.Series.Add(new LineSeries());
-            CpuPlotView.Model = usage;
-            ((IPlotModel) CpuPlotView.Model).Render(rc, CpuPlotView.Model.PlotArea);
-        }
-
-        private void Update_Click(object sender, RoutedEventArgs e)
-        {
             _dTimer = new DispatcherTimer(DispatcherPriority.Render);
-            _dTimer.Interval = TimeSpan.FromMilliseconds(100);
+            _dTimer.Interval = TimeSpan.FromMilliseconds(80);
             _dTimer.Tick += SignalPlot;
-            _dTimer.Tick += CpuUsagePlot;
             _dTimer.Tick += CheckCPULimit;
             _dTimer.Start();
         }
-
+        
+        private void CheckCPULimit(object sender, EventArgs e)
+        {
+            double v = _counter.NextValue()/Environment.ProcessorCount;
+            if (Math.Abs(v - cpuLimit) > 5)
+            {
+                Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.High;
+            }
+        }
+        
         private void SignalPlot(object sender, EventArgs e)
         {
             _counter.NextValue();
@@ -101,45 +99,6 @@ namespace FourierTransas
             }
 
             _counter.NextValue();
-        }
-
-        private int x = 0;
-        Dictionary<int, int> threadSeries = new Dictionary<int, int>(); // <thread id, LineSeries>
-
-        private void CpuUsagePlot(object sender, EventArgs e)
-        {
-            var process = Process.GetCurrentProcess();
-            ProcessThreadCollection threadCollection = process.Threads;
-            foreach (ProcessThread thread in threadCollection)
-            {
-                var point = new DataPoint(x,
-                    _counter.NextValue()/Environment.ProcessorCount * (thread.UserProcessorTime / process.UserProcessorTime));
-
-                if (threadSeries.ContainsKey(thread.Id))
-                {
-                    (CpuPlotView.Model.Series[threadSeries[thread.Id]] as LineSeries).Points.Add(point);
-                }
-                else
-                {
-                    int i = CpuPlotView.Model.Series.Count;
-                    threadSeries.Add(thread.Id, i);
-                    var s = new LineSeries();
-                    s.Points.Add(point);
-                    CpuPlotView.Model.Series.Add(s);
-                }
-            }
-
-            x++;
-            CpuPlotView.InvalidatePlot(true);
-        }
-
-        private void CheckCPULimit(object sender, EventArgs e)
-        {
-            double v = _counter.NextValue()/Environment.ProcessorCount;
-            if (Math.Abs(v - cpuLimit) > 7)
-            {
-                Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.RealTime;
-            }
         }
     }
 }

@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "FourierTransas": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}
