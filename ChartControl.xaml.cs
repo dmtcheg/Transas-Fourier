@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Controls;
 using OxyPlot.SkiaSharp;
 using SkiaSharp;
@@ -88,7 +89,7 @@ namespace FourierTransas
             for (int j = 0; j < length; j++)
                 gen[j] = Math.Sqrt(Math.Pow(complex[j].Real, 2) + Math.Pow(complex[j].Imaginary, 2)) * 2 / length;
 
-            for (int i = 0; i < 3; i++)
+            Parallel.For(0, 3, i =>
             {
                 for (int j = 0; j < length; j++)
                 {
@@ -96,7 +97,7 @@ namespace FourierTransas
                 }
 
                 plots[i].InvalidatePlot(true);
-            }
+            });
 
             _counter.NextValue();
         }

@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Windows.Controls;
 using System.Windows.Threading;
+using NickStrupat;
 using OxyPlot;
 using OxyPlot.Legends;
 using OxyPlot.Series;
@@ -16,7 +17,7 @@ namespace FourierTransas
     {
         private PerformanceCounter _cpuCounter;
         private DispatcherTimer _dTimer;
-        
+        private ComputerInfo info = new ComputerInfo();
         public ResourceControl(PerformanceCounter counter)
         {
             _cpuCounter = counter;
@@ -61,7 +62,7 @@ namespace FourierTransas
         {
             var process = Process.GetCurrentProcess();
             (CpuPlotView.Model.Series[0] as LineSeries).Points.Add(new DataPoint(x, _cpuCounter.NextValue() / Environment.ProcessorCount));
-            (RamPlotView.Model.Series[0] as LineSeries).Points.Add(new DataPoint(x, process.WorkingSet64/1048576));
+            (RamPlotView.Model.Series[0] as LineSeries).Points.Add(new DataPoint(x, 100*Environment.WorkingSet/(long)info.TotalPhysicalMemory));
 
             ProcessThreadCollection threadCollection = process.Threads;
             foreach (ProcessThread thread in threadCollection)
