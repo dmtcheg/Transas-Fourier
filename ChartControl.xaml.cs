@@ -3,6 +3,7 @@ using OxyPlot.Series;
 using OxyPlot.SkiaSharp.Wpf;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
@@ -27,12 +28,13 @@ namespace FourierTransas
             new PerformanceCounter("Process", "% Processor Time", Process.GetCurrentProcess().ProcessName);
         private DispatcherTimer _dTimer;
         private Random r = new Random();
-        private float cpuLimit = 30;
+        private float cpuLimit = 32;
 
         public ChartControl()
         {
             InitializeComponent();
-            SkiaRenderContext rc = new SkiaRenderContext() {SkCanvas = new SKCanvas(new SKBitmap(1000, 700))};
+            Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.RealTime;
+            SkiaRenderContext rc = new SkiaRenderContext() {SkCanvas = new SKCanvas(new SKBitmap(1000, 800))};
             rc.RenderTarget = RenderTarget.Screen;
 
             FFTModel[] models = new FFTModel[]
@@ -61,10 +63,10 @@ namespace FourierTransas
                 (PlotView2.Model.Series[0] as LineSeries).Points,
             };
             length = points[0].Count;
-            _dTimer = new DispatcherTimer(DispatcherPriority.Render);
+            _dTimer = new DispatcherTimer(DispatcherPriority.Send);
             _dTimer.Interval = TimeSpan.FromMilliseconds(80);
             _dTimer.Tick += SignalPlot;
-            _dTimer.Tick += CheckCPULimit;
+            //_dTimer.Tick += CheckCPULimit;
             _dTimer.Start();
         }
         
@@ -73,7 +75,7 @@ namespace FourierTransas
             double v = _counter.NextValue()/Environment.ProcessorCount;
             if (Math.Abs(v - cpuLimit) > 5)
             {
-                Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.High;
+                Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.RealTime;
             }
         }
         
@@ -86,14 +88,14 @@ namespace FourierTransas
             for (int j = 0; j < length; j++) complex[j] = new Complex(gen[j], 0);
 
             Fourier.Forward(complex, FourierOptions.NoScaling);
-            for (int j = 0; j < length; j++)
+            for(int j=0;j<length; j++)
                 gen[j] = Math.Sqrt(Math.Pow(complex[j].Real, 2) + Math.Pow(complex[j].Imaginary, 2)) * 2 / length;
 
             Parallel.For(0, 3, i =>
             {
                 for (int j = 0; j < length; j++)
                 {
-                    points[i][j] = new DataPoint(points[i][j].X, points[i][j].Y + gen[j]);
+                    points[i][j] = new DataPoint(points[i][j].X, points[i][j].Y + gen[j]*Math.Pow(-1, j+i));
                 }
 
                 plots[i].InvalidatePlot(true);

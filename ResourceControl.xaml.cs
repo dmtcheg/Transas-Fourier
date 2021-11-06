@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows.Threading;
-using NickStrupat;
 using OxyPlot;
 using OxyPlot.Legends;
 using OxyPlot.Series;
@@ -17,55 +18,46 @@ namespace FourierTransas
     {
         private PerformanceCounter _cpuCounter;
         private DispatcherTimer _dTimer;
-        private ComputerInfo info = new ComputerInfo();
+
         public ResourceControl(PerformanceCounter counter)
         {
             _cpuCounter = counter;
             InitializeComponent();
-            SkiaRenderContext rc = new SkiaRenderContext() {SkCanvas = new SKCanvas(new SKBitmap(400, 700))};
+            SkiaRenderContext rc = new SkiaRenderContext() {SkCanvas = new SKCanvas(new SKBitmap(400, 400))};
             rc.RenderTarget = RenderTarget.Screen;
-            
-            CpuPlotView.Model = new PlotModel
+
+            PlotModel cpuModel = new PlotModel
             {
                 Title = "CPU",
-                Series = {new LineSeries(){Title = "Total CPU", Color = OxyColors.Green, LegendKey = "total CPU"} }
+                IsLegendVisible = true,
+                Series = { new LineSeries() { Title = "Total CPU", Color = OxyColors.Green, Decimator = Decimator.Decimate}}
             };
-            // CpuPlotView.Model.Legends.Add(new Legend
-            // {
-            //     LegendBackground = OxyColors.Green,
-            //     LegendPlacement = LegendPlacement.Outside,
-            //     LegendPosition = LegendPosition.BottomCenter,
-            //     LegendFontSize = 12
-            // });
+            cpuModel.Legends.Add(new Legend
+            {
+                LegendPlacement = LegendPlacement.Outside,
+                LegendPosition = LegendPosition.BottomCenter,
+                LegendFontSize = 12
+            });
+            CpuPlotView.Model = cpuModel;
             (CpuPlotView.Model as IPlotModel).Render(rc, CpuPlotView.Model.PlotArea);
-            
-            RamPlotView.Model = new PlotModel() {Title = "Memory", Series = {new LineSeries(){Color = OxyColors.Red}}};
-            // RamPlotView.Model.Legends.Add(new Legend
-            // {
-            //     LegendBackground = OxyColors.Red,
-            //     LegendPlacement = LegendPlacement.Outside,
-            //     LegendPosition = LegendPosition.BottomCenter,
-            //     LegendFontSize = 12
-            // });
-            (RamPlotView.Model as IPlotModel).Render(rc, RamPlotView.Model.PlotArea);
 
-            _dTimer = new DispatcherTimer(DispatcherPriority.Normal);
-            _dTimer.Interval = TimeSpan.FromMilliseconds(250);
+            _dTimer = new DispatcherTimer(DispatcherPriority.Send);
+            _dTimer.Interval = TimeSpan.FromMilliseconds(200);
             _dTimer.Tick += ResourceUsagePlot;
             _dTimer.Start();
         }
-        
+
         Dictionary<int, int> threadSeries = new Dictionary<int, int>(); // <thread id, LineSeries>
         private int x = 0;
-        
+
         private void ResourceUsagePlot(object sender, EventArgs e)
         {
             var process = Process.GetCurrentProcess();
-            (CpuPlotView.Model.Series[0] as LineSeries).Points.Add(new DataPoint(x, _cpuCounter.NextValue() / Environment.ProcessorCount));
-            (RamPlotView.Model.Series[0] as LineSeries).Points.Add(new DataPoint(x, 100*Environment.WorkingSet/(long)info.TotalPhysicalMemory));
+            (CpuPlotView.Model.Series[0] as LineSeries).Points.Add(new DataPoint(x,
+                _cpuCounter.NextValue() / Environment.ProcessorCount));
 
-            ProcessThreadCollection threadCollection = process.Threads;
-            foreach (ProcessThread thread in threadCollection)
+            var threadCollection = process.Threads.Cast<ProcessThread>();
+            foreach (var thread in threadCollection)
             {
                 try
                 {
@@ -78,9 +70,8 @@ namespace FourierTransas
                     }
                     else
                     {
-                        int i = CpuPlotView.Model.Series.Count;
-                        threadSeries.Add(thread.Id, i);
-                        var s = new LineSeries(){Color = OxyColors.Brown};
+                        threadSeries.Add(thread.Id, CpuPlotView.Model.Series.Count);
+                        var s = new LineSeries() {Color = OxyColors.Brown};
                         s.Points.Add(point);
                         CpuPlotView.Model.Series.Add(s);
                     }
@@ -90,8 +81,8 @@ namespace FourierTransas
                 }
             }
             x++;
+            //optional: use dispatcher.beginInvoke
             CpuPlotView.InvalidatePlot(true);
-            RamPlotView.InvalidatePlot(true);
         }
     }
 }

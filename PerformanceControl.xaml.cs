@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using System.Windows;
@@ -11,6 +12,7 @@ using OxyPlot.Axes;
 using OxyPlot.Series;
 using OxyPlot.SkiaSharp;
 using SkiaSharp;
+
 namespace FourierTransas
 {
     public partial class PerformanceControl : UserControl
@@ -19,6 +21,7 @@ namespace FourierTransas
             new PerformanceCounter("Process", "% Processor Time", Process.GetCurrentProcess().ProcessName);
         private DispatcherTimer _dTimer;
         private ComputerInfo info = new ComputerInfo();
+        private List<BarItem> items;
         
         public PerformanceControl()
         {
@@ -31,6 +34,7 @@ namespace FourierTransas
             s.Items.Add(new BarItem(100*Environment.WorkingSet/(long)info.TotalPhysicalMemory));
             s.Items.Add(new BarItem(_cpuCounter.NextValue()/Environment.ProcessorCount));
             resourceModel.Series.Add(s);
+            items = s.Items;
             resourceModel.Axes.Add(new CategoryAxis
             {
                 Position = AxisPosition.Left,
@@ -39,24 +43,21 @@ namespace FourierTransas
             });
             PerformancePlotView.Model = resourceModel;
             (PerformancePlotView.Model as IPlotModel).Render(rc, PerformancePlotView.Model.PlotArea);
-
             _dTimer = new DispatcherTimer(DispatcherPriority.Normal);
-            _dTimer.Interval = TimeSpan.FromMilliseconds(100);
+            _dTimer.Interval = TimeSpan.FromMilliseconds(300);
             _dTimer.Tick += PerformanceBar;
             _dTimer.Start();
         }
 
         private void PerformanceBar(object sender, EventArgs e)
         {
-            Process.GetCurrentProcess().Refresh();
-            (PerformancePlotView.Model.Series[0] as BarSeries).Items[0] = new BarItem(100*Environment.WorkingSet/(long)info.TotalPhysicalMemory);
-            (PerformancePlotView.Model.Series[0] as BarSeries).Items[1] = new BarItem(_cpuCounter.NextValue()/Environment.ProcessorCount);
+            items[0] = new BarItem(100*Environment.WorkingSet/(long)info.TotalPhysicalMemory);
+            items[1] = new BarItem(_cpuCounter.NextValue()/Environment.ProcessorCount);
             PerformancePlotView.InvalidatePlot(true);
         }
 
         private void PerformancePlotView_OnMouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-
             Thread resourceThread = new Thread(delegate()
             {
                 Window resourceWindow = new Window
@@ -64,10 +65,11 @@ namespace FourierTransas
                     Title = "Использование ресурсов",
                     Content = new ResourceControl(_cpuCounter)
                 };
-                resourceWindow.ShowDialog();
+                resourceWindow.Show();
                 Dispatcher.Run();
             });
             resourceThread.SetApartmentState(ApartmentState.STA);
+            resourceThread.IsBackground = true;
             resourceThread.Start();
         }
     }
