@@ -29,7 +29,7 @@ namespace FourierTransas
         private DispatcherTimer _dTimer;
         private Random r = new Random();
         private float cpuLimit = 32;
-
+        
         public ChartControl()
         {
             InitializeComponent();
@@ -78,7 +78,7 @@ namespace FourierTransas
                 Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.RealTime;
             }
         }
-        
+
         private void SignalPlot(object sender, EventArgs e)
         {
             _counter.NextValue();
@@ -91,7 +91,7 @@ namespace FourierTransas
             for(int j=0;j<length; j++)
                 gen[j] = Math.Sqrt(Math.Pow(complex[j].Real, 2) + Math.Pow(complex[j].Imaginary, 2)) * 2 / length;
 
-            Parallel.For(0, 3, i =>
+            Parallel.For(0,3,i=>
             {
                 for (int j = 0; j < length; j++)
                 {

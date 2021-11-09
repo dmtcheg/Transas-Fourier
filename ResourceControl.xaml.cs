@@ -41,7 +41,7 @@ namespace FourierTransas
             CpuPlotView.Model = cpuModel;
             (CpuPlotView.Model as IPlotModel).Render(rc, CpuPlotView.Model.PlotArea);
 
-            _dTimer = new DispatcherTimer(DispatcherPriority.Send);
+            _dTimer = new DispatcherTimer(DispatcherPriority.Render);
             _dTimer.Interval = TimeSpan.FromMilliseconds(200);
             _dTimer.Tick += ResourceUsagePlot;
             _dTimer.Start();

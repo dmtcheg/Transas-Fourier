@@ -43,8 +43,9 @@ namespace FourierTransas
             });
             PerformancePlotView.Model = resourceModel;
             (PerformancePlotView.Model as IPlotModel).Render(rc, PerformancePlotView.Model.PlotArea);
-            _dTimer = new DispatcherTimer(DispatcherPriority.Normal);
-            _dTimer.Interval = TimeSpan.FromMilliseconds(300);
+
+            _dTimer = new DispatcherTimer(DispatcherPriority.Render);
+            _dTimer.Interval = TimeSpan.FromMilliseconds(200);
             _dTimer.Tick += PerformanceBar;
             _dTimer.Start();
         }
@@ -52,7 +53,8 @@ namespace FourierTransas
         private void PerformanceBar(object sender, EventArgs e)
         {
             items[0] = new BarItem(100*Environment.WorkingSet/(long)info.TotalPhysicalMemory);
-            items[1] = new BarItem(_cpuCounter.NextValue()/Environment.ProcessorCount);
+            var cpuLoad = _cpuCounter.NextValue() / Environment.ProcessorCount;
+            if (cpuLoad > 1) items[1] = new BarItem(cpuLoad);
             PerformancePlotView.InvalidatePlot(true);
         }
 
