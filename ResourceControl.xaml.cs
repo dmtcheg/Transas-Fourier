@@ -16,13 +16,13 @@ namespace FourierTransas
 {
     public partial class ResourceControl : UserControl
     {
-        private PerformanceCounter _cpuCounter;
+        private MonitorService _service;
         private DispatcherTimer _dTimer;
 
-        public ResourceControl(PerformanceCounter counter)
+        public ResourceControl(MonitorService service)
         {
-            _cpuCounter = counter;
             InitializeComponent();
+            _service = service;
             SkiaRenderContext rc = new SkiaRenderContext() {SkCanvas = new SKCanvas(new SKBitmap(400, 400))};
             rc.RenderTarget = RenderTarget.Screen;
 
@@ -32,6 +32,7 @@ namespace FourierTransas
                 IsLegendVisible = true,
                 Series = { new LineSeries() { Title = "Total CPU", Color = OxyColors.Green, Decimator = Decimator.Decimate}}
             };
+            
             cpuModel.Legends.Add(new Legend
             {
                 LegendPlacement = LegendPlacement.Outside,
@@ -52,36 +53,6 @@ namespace FourierTransas
 
         private void ResourceUsagePlot(object sender, EventArgs e)
         {
-            var process = Process.GetCurrentProcess();
-            (CpuPlotView.Model.Series[0] as LineSeries).Points.Add(new DataPoint(x,
-                _cpuCounter.NextValue() / Environment.ProcessorCount));
-
-            var threadCollection = process.Threads.Cast<ProcessThread>();
-            foreach (var thread in threadCollection)
-            {
-                try
-                {
-                    var point = new DataPoint(x,
-                        _cpuCounter.NextValue() / Environment.ProcessorCount * (thread.UserProcessorTime / process.UserProcessorTime));
-
-                    if (threadSeries.ContainsKey(thread.Id))
-                    {
-                        (CpuPlotView.Model.Series[threadSeries[thread.Id]] as LineSeries).Points.Add(point);
-                    }
-                    else
-                    {
-                        threadSeries.Add(thread.Id, CpuPlotView.Model.Series.Count);
-                        var s = new LineSeries() {Color = OxyColors.Brown};
-                        s.Points.Add(point);
-                        CpuPlotView.Model.Series.Add(s);
-                    }
-                }
-                catch
-                {
-                }
-            }
-            x++;
-            //optional: use dispatcher.beginInvoke
             CpuPlotView.InvalidatePlot(true);
         }
     }

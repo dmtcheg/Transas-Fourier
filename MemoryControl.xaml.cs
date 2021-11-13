@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Threading;
@@ -18,8 +19,7 @@ namespace FourierTransas
         private DispatcherTimer _dTimer;
         private ComputerInfo _info = new ComputerInfo();
         private List<DataPoint> points;
-        private BackgroundWorker _worker = new BackgroundWorker();
-
+        
         public MemoryControl()
         {
             InitializeComponent();
@@ -40,23 +40,22 @@ namespace FourierTransas
                 LegendFontSize = 12
             });
             (RamPlotView.Model as IPlotModel).Render(rc, RamPlotView.Model.PlotArea);
-
-            _worker.DoWork += ResourceUsagePlot;
-            
             _dTimer = new DispatcherTimer(DispatcherPriority.Render);
             _dTimer.Interval = TimeSpan.FromMilliseconds(200);
-            _dTimer.Tick += (obj,e)=>_worker.RunWorkerAsync();
+            _dTimer.Tick += (obj, e) =>
+            {
+                Task.Factory.StartNew(ResourceUsagePlot);
+            };
             _dTimer.Start();
         }
 
         private int x = 0;
 
-        private void ResourceUsagePlot(object sender, DoWorkEventArgs e)
+        private void ResourceUsagePlot()
         {
-            points.Add(new DataPoint(x,
-                100 * Environment.WorkingSet / (long) _info.TotalPhysicalMemory));
-            RamPlotView.InvalidatePlot(true);
+            points.Add(new DataPoint(x,100 * Environment.WorkingSet / (long) _info.TotalPhysicalMemory));
             x++;
+            RamPlotView.InvalidatePlot(true);
         }
     }
 }

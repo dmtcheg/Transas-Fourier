@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -17,44 +18,44 @@ namespace FourierTransas
 {
     public partial class PerformanceControl : UserControl
     {
-        PerformanceCounter _cpuCounter =
-            new PerformanceCounter("Process", "% Processor Time", Process.GetCurrentProcess().ProcessName);
+        private MonitorService _service;
         private DispatcherTimer _dTimer;
-        private ComputerInfo info = new ComputerInfo();
         private List<BarItem> items;
-        
+
         public PerformanceControl()
         {
             InitializeComponent();
+            _service = new MonitorService();
+            
             SkiaRenderContext rc = new SkiaRenderContext() {SkCanvas = new SKCanvas(new SKBitmap(300, 300))};
             rc.RenderTarget = RenderTarget.Screen;
-    
+
             var resourceModel = new PlotModel();
             var s = new BarSeries();
-            s.Items.Add(new BarItem(100*Environment.WorkingSet/(long)info.TotalPhysicalMemory));
-            s.Items.Add(new BarItem(_cpuCounter.NextValue()/Environment.ProcessorCount));
+            s.Items.Add(new BarItem(0));
+            s.Items.Add(new BarItem(0));
             resourceModel.Series.Add(s);
             items = s.Items;
-            resourceModel.Axes.Add(new CategoryAxis
+
+            PerformancePlotView.Model = resourceModel;
+            PerformancePlotView.Model.Axes.Add(new CategoryAxis
             {
                 Position = AxisPosition.Left,
                 Key = "ResourceAxis",
-                ItemsSource = new[]{"Mem", "CPU"}
+                ItemsSource = new[] {"Mem", "CPU"}
             });
-            PerformancePlotView.Model = resourceModel;
             (PerformancePlotView.Model as IPlotModel).Render(rc, PerformancePlotView.Model.PlotArea);
 
             _dTimer = new DispatcherTimer(DispatcherPriority.Render);
             _dTimer.Interval = TimeSpan.FromMilliseconds(200);
-            _dTimer.Tick += PerformanceBar;
+            _dTimer.Tick += (sender, args) => PerformanceBar();
             _dTimer.Start();
         }
 
-        private void PerformanceBar(object sender, EventArgs e)
+        private void PerformanceBar()
         {
-            items[0] = new BarItem(100*Environment.WorkingSet/(long)info.TotalPhysicalMemory);
-            var cpuLoad = _cpuCounter.NextValue() / Environment.ProcessorCount;
-            if (cpuLoad > 1) items[1] = new BarItem(cpuLoad);
+            items[0] = new BarItem(_service.CurrentMemoryLoad);
+            items[1] = new BarItem(_service.CurrentCpuLoad);
             PerformancePlotView.InvalidatePlot(true);
         }
 
@@ -65,7 +66,7 @@ namespace FourierTransas
                 Window resourceWindow = new Window
                 {
                     Title = "Использование ресурсов",
-                    Content = new ResourceControl(_cpuCounter)
+                    Content = new ResourceControl(_service)
                 };
                 resourceWindow.Show();
                 Dispatcher.Run();
