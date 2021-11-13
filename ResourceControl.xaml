@@ -15,8 +15,7 @@
         <ContentControl Grid.Row="0">
             <skia:PlotView Name="CpuPlotView"/>
         </ContentControl>
-        <ContentControl Grid.Row="1">
-            <local:MemoryControl/>
+        <ContentControl Grid.Row="1" Name="MemControl">
         </ContentControl>
     </Grid>
 </UserControl>

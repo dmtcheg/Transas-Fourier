@@ -26,6 +26,10 @@ namespace FourierTransas
         {
             InitializeComponent();
             _service = new MonitorService();
+            Task.Factory.StartNew(() =>
+            {
+                _service.OnStart();
+            }, TaskCreationOptions.LongRunning);
             
             SkiaRenderContext rc = new SkiaRenderContext() {SkCanvas = new SKCanvas(new SKBitmap(300, 300))};
             rc.RenderTarget = RenderTarget.Screen;
@@ -36,14 +40,13 @@ namespace FourierTransas
             s.Items.Add(new BarItem(0));
             resourceModel.Series.Add(s);
             items = s.Items;
-
-            PerformancePlotView.Model = resourceModel;
-            PerformancePlotView.Model.Axes.Add(new CategoryAxis
+            resourceModel.Axes.Add(new CategoryAxis
             {
                 Position = AxisPosition.Left,
                 Key = "ResourceAxis",
                 ItemsSource = new[] {"Mem", "CPU"}
             });
+            PerformancePlotView.Model = resourceModel;
             (PerformancePlotView.Model as IPlotModel).Render(rc, PerformancePlotView.Model.PlotArea);
 
             _dTimer = new DispatcherTimer(DispatcherPriority.Render);

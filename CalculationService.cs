@@ -33,8 +33,12 @@ namespace FourierTransas
 
             _timer = new Timer(100);
             _timer.Elapsed += (obj,args) => UpdatePoints();
-            _timer.Enabled = true;
+        }
+
+        public void OnStartup()
+        {
             _timer.AutoReset = true;
+            _timer.Enabled = true;
         }
 
 
@@ -52,9 +56,12 @@ namespace FourierTransas
 
             for (int i = 0; i < points.Length; i++)
             {
-                for (int j = 0; j < length; j++)
+                lock (PlotModels[i].SyncRoot)
                 {
-                    points[i][j] = new DataPoint(points[i][j].X, points[i][j].Y + gen[j]*Math.Pow(-1, j+i));
+                    for (int j = 0; j < length; j++)
+                    {
+                        points[i][j] = new DataPoint(points[i][j].X, points[i][j].Y + gen[j] * Math.Pow(-1, j + i));
+                    }
                 }
             }
         }

@@ -8,8 +8,7 @@
              d:DesignHeight="300" d:DesignWidth="300">
     <Grid>
         <ContentControl>
-            <skia:PlotView Name="PerformancePlotView"  />
-            <!-- MouseDoubleClick="PerformancePlotView_OnMouseDoubleClick"-->
+            <skia:PlotView Name="PerformancePlotView" MouseDoubleClick="PerformancePlotView_OnMouseDoubleClick"/>
         </ContentControl>
     </Grid>
 </UserControl>

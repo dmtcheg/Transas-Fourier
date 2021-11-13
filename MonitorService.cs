@@ -7,6 +7,7 @@ using System.Linq;
 using System.Timers;
 using System.Windows.Threading;
 using OxyPlot.Axes;
+using OxyPlot.Legends;
 using OxyPlot.Series;
 
 namespace FourierTransas
@@ -18,8 +19,6 @@ namespace FourierTransas
         private ComputerInfo _info = new ComputerInfo();
         private List<DataPoint> _cpuSamples;
         private List<DataPoint> _ramSamples;
-        private List<List<DataPoint>> _threadSamples;
-        public PlotModel LoadModel { get; private set; }
         public PlotModel ThreadModel { get; private set; }
         public PlotModel RamModel { get; private set; }
 
@@ -30,24 +29,49 @@ namespace FourierTransas
         {
             _cpuSamples = new List<DataPoint>();
             _ramSamples = new List<DataPoint>();
-            _threadSamples = new List<List<DataPoint>>();
 
-
+            ThreadModel = new PlotModel
+            {
+                Title = "CPU",
+                IsLegendVisible = true,
+                Series = { new LineSeries() { Title = "Total CPU", Color = OxyColors.Green, Decimator = Decimator.Decimate}}
+            };
+            ThreadModel.Legends.Add(new Legend
+            {
+                LegendPlacement = LegendPlacement.Outside,
+                LegendPosition = LegendPosition.BottomCenter,
+                LegendFontSize = 12
+            });
+            _cpuSamples = (ThreadModel.Series[0] as LineSeries).Points;
+            
+            RamModel = new PlotModel()
+            {
+                Title = "Memory",
+                IsLegendVisible = true,
+                Series = {new LineSeries() {Title="% RAM", Color = OxyColors.Red, Decimator = Decimator.Decimate}}
+            };
+            RamModel.Legends.Add(new Legend
+            {
+                LegendPlacement = LegendPlacement.Outside,
+                LegendPosition = LegendPosition.BottomCenter,
+                LegendFontSize = 12
+            });
+            _ramSamples= (RamModel.Series[0] as LineSeries).Points;
+            
             _timer = new Timer(200);
-            _timer.AutoReset = true;
             _timer.Elapsed += CpuUsage;
             _timer.Elapsed += RamUsage;
-            _timer.Enabled = true;
         }
 
         public void OnStart()
         {
-            _timer.Start();
+            _timer.Enabled = true;
+            _timer.AutoReset = true;
         }
 
         public void OnStop()
         {
-            _timer.Stop();
+            _timer.Enabled = false;
         }
 
         private int x = 0;
@@ -55,8 +79,9 @@ namespace FourierTransas
         
         private void CpuUsage(object sender, EventArgs e)
         {
+            //todo: avoid boxing
+            (ThreadModel.Series[0] as LineSeries).Points.Add(new DataPoint(x, _cpuCounter.NextValue() / Environment.ProcessorCount));
             var process = Process.GetCurrentProcess();
-            _cpuSamples.Add(new DataPoint(x, _cpuCounter.NextValue() / Environment.ProcessorCount));
             var threadCollection = process.Threads.Cast<ProcessThread>();
             foreach (var thread in threadCollection)
             {
@@ -67,12 +92,14 @@ namespace FourierTransas
 
                     if (threadSeries.ContainsKey(thread.Id))
                     {
-                        _threadSamples[threadSeries[thread.Id]].Add(point);
+                        (ThreadModel.Series[threadSeries[thread.Id]] as LineSeries).Points.Add(point);
                     }
                     else
                     {
-                        threadSeries.Add(thread.Id, _threadSamples.Count);
-                        _threadSamples.Add(new List<DataPoint>(){point});
+                        threadSeries.Add(thread.Id, ThreadModel.Series.Count);
+                        var s = new LineSeries() {Color = OxyColors.Brown, Decimator = Decimator.Decimate};
+                        s.Points.Add(point);
+                        ThreadModel.Series.Add(s);
                     }
                 }
                 catch
@@ -85,15 +112,11 @@ namespace FourierTransas
         private int c = 0;
         private void RamUsage(object sender, EventArgs e)
         {
-            _ramSamples.Add(new DataPoint(c,100 * Environment.WorkingSet / (long) _info.TotalPhysicalMemory));
+            lock (RamModel.SyncRoot)
+            {
+                _ramSamples.Add(new DataPoint(c, 100 * Environment.WorkingSet / (long) _info.TotalPhysicalMemory));
+            }
             c++;
-        }
-        
-        private void PerformanceBar(object sender, EventArgs e)
-        {
-            // todo: avoid boxing
-            (LoadModel.Series[0] as BarSeries).Items[0] = new BarItem(CurrentMemoryLoad);
-            (LoadModel.Series[0] as BarSeries).Items[1] = new BarItem(CurrentCpuLoad);
         }
 
         private int cpuLimit = 30;

@@ -23,23 +23,11 @@ namespace FourierTransas
         {
             InitializeComponent();
             _service = service;
+            MemControl.Content = new MemoryControl(service);
             SkiaRenderContext rc = new SkiaRenderContext() {SkCanvas = new SKCanvas(new SKBitmap(400, 400))};
             rc.RenderTarget = RenderTarget.Screen;
-
-            PlotModel cpuModel = new PlotModel
-            {
-                Title = "CPU",
-                IsLegendVisible = true,
-                Series = { new LineSeries() { Title = "Total CPU", Color = OxyColors.Green, Decimator = Decimator.Decimate}}
-            };
             
-            cpuModel.Legends.Add(new Legend
-            {
-                LegendPlacement = LegendPlacement.Outside,
-                LegendPosition = LegendPosition.BottomCenter,
-                LegendFontSize = 12
-            });
-            CpuPlotView.Model = cpuModel;
+            CpuPlotView.Model = _service.ThreadModel;
             (CpuPlotView.Model as IPlotModel).Render(rc, CpuPlotView.Model.PlotArea);
 
             _dTimer = new DispatcherTimer(DispatcherPriority.Render);
@@ -47,9 +35,6 @@ namespace FourierTransas
             _dTimer.Tick += ResourceUsagePlot;
             _dTimer.Start();
         }
-
-        Dictionary<int, int> threadSeries = new Dictionary<int, int>(); // <thread id, LineSeries>
-        private int x = 0;
 
         private void ResourceUsagePlot(object sender, EventArgs e)
         {
