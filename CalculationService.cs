@@ -11,7 +11,7 @@ using OxyPlot.Series;
 
 namespace FourierTransas
 {
-    public class CalculationService
+    public class CalculationService : IDisposable
     {
         public List<PlotModel> PlotModels { get; private set; }
         private List<DataPoint>[] points;
@@ -35,12 +35,16 @@ namespace FourierTransas
             _timer.Elapsed += (obj,args) => UpdatePoints();
         }
 
-        public void OnStartup()
+        public void OnStart()
         {
-            _timer.AutoReset = true;
             _timer.Enabled = true;
         }
 
+        public void OnStop()
+        {
+            _timer.Enabled = false;
+        }
+        
 
         private void UpdatePoints()
         {
@@ -64,6 +68,12 @@ namespace FourierTransas
                     }
                 }
             }
+            //_counter.NextValue();
+        }
+
+        public void Dispose()
+        {
+            _timer.Enabled = false;
         }
     }
 }

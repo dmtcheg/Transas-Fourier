@@ -38,10 +38,7 @@ namespace FourierTransas
 
         private void ResourceUsagePlot()
         {
-            lock (RamPlotView.Model.SyncRoot)
-            {
-                RamPlotView.InvalidatePlot(true);
-            }
+            RamPlotView.InvalidatePlot(true);
         }
     }
 }

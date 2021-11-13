@@ -42,10 +42,9 @@ namespace FourierTransas
                 PlotView2
             };
             _service = new CalculationService();
-            Task.Factory.StartNew(() =>
-            {
-               _service.OnStartup();
-            }, TaskCreationOptions.LongRunning);
+            var calcThread = new Thread(_service.OnStart);
+            calcThread.Priority = ThreadPriority.AboveNormal;
+            calcThread.Start();
             
             for (int i = 0; i < plots.Length; i++)
             {

@@ -22,14 +22,17 @@ namespace FourierTransas
         private DispatcherTimer _dTimer;
         private List<BarItem> items;
 
+        /// <summary>
+        /// потребление ресурсов процессора и оперативной памяти приложением
+        /// </summary>
         public PerformanceControl()
         {
             InitializeComponent();
+
             _service = new MonitorService();
-            Task.Factory.StartNew(() =>
-            {
-                _service.OnStart();
-            }, TaskCreationOptions.LongRunning);
+            var monitorThread = new Thread(_service.OnStart);
+            monitorThread.Priority = ThreadPriority.AboveNormal;
+            monitorThread.Start();
             
             SkiaRenderContext rc = new SkiaRenderContext() {SkCanvas = new SKCanvas(new SKBitmap(300, 300))};
             rc.RenderTarget = RenderTarget.Screen;
@@ -50,9 +53,9 @@ namespace FourierTransas
             (PerformancePlotView.Model as IPlotModel).Render(rc, PerformancePlotView.Model.PlotArea);
 
             _dTimer = new DispatcherTimer(DispatcherPriority.Render);
-            _dTimer.Interval = TimeSpan.FromMilliseconds(200);
+            _dTimer.Interval = TimeSpan.FromMilliseconds(300);
             _dTimer.Tick += (sender, args) => PerformanceBar();
-            _dTimer.Start();
+            _dTimer.IsEnabled = true;
         }
 
         private void PerformanceBar()
