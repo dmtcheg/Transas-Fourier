@@ -4,17 +4,19 @@ using System.Diagnostics;
 using NickStrupat;
 using OxyPlot;
 using System.Linq;
-using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using System.Windows.Threading;
 using OxyPlot.Axes;
 using OxyPlot.Legends;
 using OxyPlot.Series;
-using Timer = System.Timers.Timer;
+using System.Timers;
 
 namespace FourierTransas
 {
+    /// <summary>
+    /// сервис для мониторинга и ограничения потребления ресурсов
+    /// </summary>
     public class MonitorService : IDisposable
     {
         private Timer _timer;
@@ -25,8 +27,9 @@ namespace FourierTransas
         public PlotModel ThreadModel { get; private set; }
         public PlotModel RamModel { get; private set; }
 
-        public double CurrentCpuLoad => _cpuSamples.Count > 0 ? _cpuSamples[_cpuSamples.Count - 1].Y : 0;
-        public double CurrentMemoryLoad => _ramSamples.Count > 0 ? _ramSamples[_ramSamples.Count - 1].Y : 0;
+        //todo: fix over 100% "load"
+        public double CurrentCpuLoad => _cpuSamples[_cpuSamples.Count - 1].Y;
+        public double CurrentMemoryLoad => _ramSamples[_ramSamples.Count - 1].Y;
 
         public MonitorService()
         {
@@ -45,8 +48,6 @@ namespace FourierTransas
                 LegendFontSize = 12
             });
             _cpuSamples = (ThreadModel.Series[0] as LineSeries).Points;
-            ThreadModel.Series.Add(new LineSeries());
-            ThreadModel.Series.Add(new LineSeries());
             
             RamModel = new PlotModel()
             {
@@ -65,6 +66,7 @@ namespace FourierTransas
             _timer = new Timer(200);
             _timer.Elapsed += (obj, args) => CpuUsage();
             _timer.Elapsed += (obj, args) => RamUsage();
+            _timer.Elapsed += (obj, args) => CheckCPULimit();
         }
 
         public void OnStart()
@@ -77,22 +79,26 @@ namespace FourierTransas
             _timer.Enabled = false;
         }
 
+        public void Dispose()
+        {
+            _timer.Enabled = false;
+        }
+
         private int x = 0;
         Dictionary<int, int> threadSeries = new Dictionary<int, int>(); // <thread id, LineSeries>
         
         private void CpuUsage()
         {
-            //todo: avoid boxing
-            _cpuSamples.Add(new DataPoint(x, _cpuCounter.NextValue() / Environment.ProcessorCount));
+            var counterValue = _cpuCounter.NextValue();
+            _cpuSamples.Add(new DataPoint(x,  counterValue/ Environment.ProcessorCount));
             var process = Process.GetCurrentProcess();
             var threadCollection = process.Threads.Cast<ProcessThread>();
-            
             foreach (var thread in threadCollection)
             {
                 try
                 {
                     var point = new DataPoint(x,
-                        _cpuCounter.NextValue() / Environment.ProcessorCount * (thread.UserProcessorTime / process.UserProcessorTime));
+                        counterValue / Environment.ProcessorCount * (thread.UserProcessorTime / process.UserProcessorTime));
             
                     if (threadSeries.ContainsKey(thread.Id))
                     {
@@ -108,7 +114,7 @@ namespace FourierTransas
                         s.Points.Add(point);
                         lock (ThreadModel.SyncRoot)
                         {
-                            ThreadModel.Series.Add(s);                            
+                            ThreadModel.Series.Add(s);
                         }
                     }
                 }
@@ -129,20 +135,15 @@ namespace FourierTransas
             c++;
         }
 
-        private int cpuLimit = 30;
-        
-        private void CheckCPULimit(object sender, EventArgs e)
+        private readonly int cpuLimit = 30;
+        private void CheckCPULimit()
         {
-            double v = _cpuCounter.NextValue()/Environment.ProcessorCount;
-            if (Math.Abs(v - cpuLimit) > 5)
+            Func<double, double> f = d =>
             {
-                Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.RealTime;
-            }
-        }
-
-        public void Dispose()
-        {
-            _timer.Enabled = false;
+                _timer.Interval = d;
+                return _cpuCounter.NextValue() / Environment.ProcessorCount - cpuLimit;
+            };
+            _timer.Interval = MathNet.Numerics.RootFinding.Bisection.FindRoot(f, 50, 600, 3, 5);
         }
     }
 }

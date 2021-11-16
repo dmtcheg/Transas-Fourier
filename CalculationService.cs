@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Timers;
@@ -17,6 +18,7 @@ namespace FourierTransas
         private List<DataPoint>[] points;
         private int length;
         private Timer _timer;
+        PerformanceCounter _cpuCounter = new PerformanceCounter("Process", "% Processor Time", Process.GetCurrentProcess().ProcessName);
         private Random r = new Random();
 
         public CalculationService()
@@ -30,13 +32,13 @@ namespace FourierTransas
             PlotModels = models.Select(m => m.Plot).ToList();
             points = PlotModels.Select(m => (m.Series[0] as LineSeries).Points).ToArray();
             length = points[0].Count;
-
-            _timer = new Timer(100);
-            _timer.Elapsed += (obj,args) => UpdatePoints();
         }
 
         public void OnStart()
         {
+            _timer = new Timer(100);
+            _timer.Elapsed += (obj, args) => UpdatePoints();
+            _timer.Elapsed += (obj, args) => CheckCPULimit();
             _timer.Enabled = true;
         }
 
@@ -44,12 +46,12 @@ namespace FourierTransas
         {
             _timer.Enabled = false;
         }
-        
+
 
         private void UpdatePoints()
         {
-            //_counter.NextValue();
-                
+            _cpuCounter.NextValue();
+
             double[] gen = Generate.Sinusoidal(length, length * 2, r.Next(0, 199999), r.Next(0, 100));
             Complex[] complex = new Complex[length];
             for (int j = 0; j < length; j++) complex[j] = new Complex(gen[j], 0);
@@ -68,12 +70,22 @@ namespace FourierTransas
                     }
                 }
             }
-            //_counter.NextValue();
         }
 
         public void Dispose()
         {
             _timer.Enabled = false;
+        }
+        
+        private readonly int cpuLimit = 30;
+        private void CheckCPULimit()
+        {
+            Func<double, double> f = d =>
+            {
+                _timer.Interval = d;
+                return _cpuCounter.NextValue() / Environment.ProcessorCount - cpuLimit;
+            };
+            _timer.Interval = MathNet.Numerics.RootFinding.Bisection.FindRoot(f, 50, 600, 3, 5);
         }
     }
 }

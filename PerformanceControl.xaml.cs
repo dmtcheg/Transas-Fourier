@@ -7,7 +7,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
-using NickStrupat;
 using OxyPlot;
 using OxyPlot.Axes;
 using OxyPlot.Series;
@@ -32,6 +31,7 @@ namespace FourierTransas
             _service = new MonitorService();
             var monitorThread = new Thread(_service.OnStart);
             monitorThread.Priority = ThreadPriority.AboveNormal;
+            monitorThread.IsBackground = true;
             monitorThread.Start();
             
             SkiaRenderContext rc = new SkiaRenderContext() {SkCanvas = new SKCanvas(new SKBitmap(300, 300))};

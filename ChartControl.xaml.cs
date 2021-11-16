@@ -12,10 +12,7 @@ using System.Threading.Tasks;
 using System.Windows.Controls;
 using OxyPlot.SkiaSharp;
 using SkiaSharp;
-using System.Timers;
 using System.Windows.Threading;
-using MathNet.Numerics;
-using MathNet.Numerics.IntegralTransforms;
 
 namespace FourierTransas
 {
@@ -44,6 +41,7 @@ namespace FourierTransas
             _service = new CalculationService();
             var calcThread = new Thread(_service.OnStart);
             calcThread.Priority = ThreadPriority.AboveNormal;
+            calcThread.IsBackground = true;
             calcThread.Start();
             
             for (int i = 0; i < plots.Length; i++)

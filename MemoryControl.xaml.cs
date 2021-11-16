@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Windows.Controls;
-using System.Windows.Documents;
 using System.Windows.Threading;
 using NickStrupat;
 using OxyPlot;
@@ -17,7 +16,6 @@ namespace FourierTransas
     public partial class MemoryControl : UserControl
     {
         private DispatcherTimer _dTimer;
-        private ComputerInfo _info = new ComputerInfo();
         private MonitorService _service;
 
         public MemoryControl(MonitorService service)
