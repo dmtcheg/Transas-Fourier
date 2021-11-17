@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
+using System.Runtime.InteropServices;
 using System.Timers;
 using System.Windows.Threading;
 using MathNet.Numerics;
@@ -18,8 +19,10 @@ namespace FourierTransas
         private List<DataPoint>[] points;
         private int length;
         private Timer _timer;
-        PerformanceCounter _cpuCounter = new PerformanceCounter("Process", "% Processor Time", Process.GetCurrentProcess().ProcessName);
-        private Random r = new Random();
+        public uint ThreadId;
+        PerformanceCounter _cpuCounter =
+            new PerformanceCounter("Process", "% Processor Time", Process.GetCurrentProcess().ProcessName);
+        Random r = new Random();
 
         public CalculationService()
         {
@@ -32,13 +35,15 @@ namespace FourierTransas
             PlotModels = models.Select(m => m.Plot).ToList();
             points = PlotModels.Select(m => (m.Series[0] as LineSeries).Points).ToArray();
             length = points[0].Count;
+            
+            _timer= new Timer(2000);
+            _timer.Elapsed += (obj, args) => UpdatePoints();
+            //_timer.Elapsed += (obj, args) => CheckCPULimit();
         }
 
         public void OnStart()
         {
-            _timer = new Timer(100);
-            _timer.Elapsed += (obj, args) => UpdatePoints();
-            _timer.Elapsed += (obj, args) => CheckCPULimit();
+            ThreadId = GetCurrentThreadId();
             _timer.Enabled = true;
         }
 
@@ -47,6 +52,10 @@ namespace FourierTransas
             _timer.Enabled = false;
         }
 
+        public void Dispose()
+        {
+            _timer.Enabled = false;
+        }
 
         private void UpdatePoints()
         {
@@ -72,11 +81,6 @@ namespace FourierTransas
             }
         }
 
-        public void Dispose()
-        {
-            _timer.Enabled = false;
-        }
-        
         private readonly int cpuLimit = 30;
         private void CheckCPULimit()
         {
@@ -85,7 +89,10 @@ namespace FourierTransas
                 _timer.Interval = d;
                 return _cpuCounter.NextValue() / Environment.ProcessorCount - cpuLimit;
             };
-            _timer.Interval = MathNet.Numerics.RootFinding.Bisection.FindRoot(f, 50, 600, 3, 5);
+            _timer.Interval = MathNet.Numerics.RootFinding.Bisection.FindRoot(f, 50, 600, 3, 3);
         }
+
+        [DllImport("Kernel32.dll")]
+        private static extern uint GetCurrentThreadId();
     }
 }

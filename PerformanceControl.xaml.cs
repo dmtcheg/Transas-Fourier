@@ -17,6 +17,8 @@ namespace FourierTransas
 {
     public partial class PerformanceControl : UserControl
     {
+        private readonly uint _mainThreadId;
+        private readonly uint _calcThreadId;
         private MonitorService _service;
         private DispatcherTimer _dTimer;
         private List<BarItem> items;
@@ -24,18 +26,18 @@ namespace FourierTransas
         /// <summary>
         /// потребление ресурсов процессора и оперативной памяти приложением
         /// </summary>
-        public PerformanceControl()
+        public PerformanceControl(uint mainThreadId, uint calcThreadId)
         {
+            // can id be changed?
+            _mainThreadId = mainThreadId;
+            _calcThreadId = calcThreadId;
+
             InitializeComponent();
 
-            _service = new MonitorService();
-            var monitorThread = new Thread(_service.OnStart);
-            monitorThread.Priority = ThreadPriority.AboveNormal;
-            monitorThread.IsBackground = true;
-            monitorThread.Start();
-            
             SkiaRenderContext rc = new SkiaRenderContext() {SkCanvas = new SKCanvas(new SKBitmap(300, 300))};
             rc.RenderTarget = RenderTarget.Screen;
+
+            _service = new MonitorService();
 
             var resourceModel = new PlotModel();
             var s = new BarSeries();
@@ -60,26 +62,26 @@ namespace FourierTransas
 
         private void PerformanceBar()
         {
-            items[0] = new BarItem(_service.CurrentMemoryLoad);
-            items[1] = new BarItem(_service.CurrentCpuLoad);
+            items[0] = new BarItem(_service.CurrentMemoryLoad());
+            items[1] = new BarItem(_service.CurrentCpuLoad());
             PerformancePlotView.InvalidatePlot(true);
         }
 
         private void PerformancePlotView_OnMouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            Thread resourceThread = new Thread(delegate()
+            // Thread resourceThread = new Thread(delegate()
+            // {
+            Window resourceWindow = new Window
             {
-                Window resourceWindow = new Window
-                {
-                    Title = "Использование ресурсов",
-                    Content = new ResourceControl(_service)
-                };
-                resourceWindow.Show();
-                Dispatcher.Run();
-            });
-            resourceThread.SetApartmentState(ApartmentState.STA);
-            resourceThread.IsBackground = true;
-            resourceThread.Start();
+                Title = "Использование ресурсов",
+                Content = new ResourceControl(_service, _mainThreadId, _calcThreadId)
+            };
+            resourceWindow.Show();
+            //Dispatcher.Run();
+            // });
+            // resourceThread.SetApartmentState(ApartmentState.STA);
+            // resourceThread.IsBackground = true;
+            // resourceThread.Start();
         }
     }
 }

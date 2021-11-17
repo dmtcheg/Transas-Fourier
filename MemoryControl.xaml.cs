@@ -28,10 +28,10 @@ namespace FourierTransas
             RamPlotView.Model = _service.RamModel;
             (RamPlotView.Model as IPlotModel).Render(rc, RamPlotView.Model.PlotArea);
 
-            _dTimer = new DispatcherTimer(DispatcherPriority.Render);
-            _dTimer.Interval = TimeSpan.FromMilliseconds(200);
+            _dTimer = new DispatcherTimer(DispatcherPriority.Normal);
+            _dTimer.Interval = TimeSpan.FromMilliseconds(1000);
             _dTimer.Tick += (obj, e) => ResourceUsagePlot();
-            _dTimer.Start();
+            _dTimer.IsEnabled = true;
         }
 
         private void ResourceUsagePlot()

@@ -26,8 +26,7 @@
         <ContentControl Grid.Column="0" Grid.Row="2">
             <skia:PlotView Name="PlotView2"/>
         </ContentControl>
-        <ContentControl Grid.Column="1" Grid.Row="3">
-            <control:PerformanceControl/>
+        <ContentControl Grid.Column="1" Grid.Row="3" Name="PerfControl">
         </ContentControl>
     </Grid>
 </UserControl>

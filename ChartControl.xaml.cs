@@ -7,6 +7,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Controls;
@@ -21,6 +22,9 @@ namespace FourierTransas
         private PlotView[] plots;
         private DispatcherTimer _dTimer;
         private CalculationService _service;
+        
+        [DllImport("Kernel32.dll")]
+        private static extern uint GetCurrentThreadId();
         
         /// <summary>
         /// эмулирует построение и обновление графика сигнала
@@ -39,11 +43,14 @@ namespace FourierTransas
                 PlotView2
             };
             _service = new CalculationService();
+    
             var calcThread = new Thread(_service.OnStart);
             calcThread.Priority = ThreadPriority.AboveNormal;
             calcThread.IsBackground = true;
             calcThread.Start();
-            
+
+            PerfControl.Content = new PerformanceControl(GetCurrentThreadId(), _service.ThreadId);
+
             for (int i = 0; i < plots.Length; i++)
             {
                 plots[i].Model = _service.PlotModels[i];
@@ -52,7 +59,7 @@ namespace FourierTransas
             _dTimer = new DispatcherTimer(DispatcherPriority.Send);
             _dTimer.Interval = TimeSpan.FromMilliseconds(100);
             _dTimer.Tick += SignalPlot;
-            _dTimer.Start();
+            _dTimer.IsEnabled = true;
         }
         
         private void SignalPlot(object sender, EventArgs e)
