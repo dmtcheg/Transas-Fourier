@@ -17,8 +17,8 @@ namespace FourierTransas
 {
     public partial class PerformanceControl : UserControl
     {
-        private readonly uint _mainThreadId;
-        private readonly uint _calcThreadId;
+        private readonly IntPtr _mainThreadId;
+        private readonly IntPtr _calcThreadId;
         private MonitorService _service;
         private DispatcherTimer _dTimer;
         private List<BarItem> items;
@@ -26,7 +26,7 @@ namespace FourierTransas
         /// <summary>
         /// потребление ресурсов процессора и оперативной памяти приложением
         /// </summary>
-        public PerformanceControl(uint mainThreadId, uint calcThreadId)
+        public PerformanceControl(IntPtr mainThreadId, IntPtr calcThreadId)
         {
             // can id be changed?
             _mainThreadId = mainThreadId;

@@ -25,6 +25,8 @@ namespace FourierTransas
 
         [DllImport("Kernel32.dll")]
         public static extern uint GetCurrentThreadId();
+        [DllImport("Kernel32.dll")]
+        private static extern IntPtr GetCurrentThread();
         
         /// <summary>
         /// эмулирует построение и обновление графика сигнала
@@ -45,26 +47,27 @@ namespace FourierTransas
 
             CalculationService service = null;
             //todo
-            
-            
-            // var calcThread = new Thread(()=>
-            // {
-            //     _service.OnStart();
-            //     calcThreadId = _service.ThreadId;
-            // });
-            // calcThread.Priority = ThreadPriority.AboveNormal;
-            // calcThread.IsBackground = true;
-            // calcThread.Start();
-            
-            Task<uint> t = Task<uint>.Factory.StartNew(() =>
+
+            var calcThreadId =IntPtr.Zero;
+            var calcThread = new Thread(()=>
             {
                 service = new CalculationService();
                 service.OnStart();
-                return service.ThreadId;
-            }, TaskCreationOptions.LongRunning);
-            uint calcThreadId = t.Result;
+                calcThreadId = service.ThreadId;
+            });
+            calcThread.Priority = ThreadPriority.AboveNormal;
+            calcThread.IsBackground = true;
+            calcThread.Start();
             
-            PerfControl.Content = new PerformanceControl(GetCurrentThreadId(), calcThreadId);
+            // Task<uint> t = Task<uint>.Factory.StartNew(() =>
+            // {
+            //     service = new CalculationService();
+            //     service.OnStart();
+            //     return service.ThreadId;
+            // }, TaskCreationOptions.LongRunning);
+            // uint calcThreadId = t.Result;
+            calcThread.Join();
+            PerfControl.Content = new PerformanceControl(GetCurrentThread(), calcThreadId);
 
             for (int i = 0; i < plots.Length; i++)
             {

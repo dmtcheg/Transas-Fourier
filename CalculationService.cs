@@ -19,7 +19,7 @@ namespace FourierTransas
         private List<DataPoint>[] points;
         private int length;
         private Timer _timer;
-        public uint ThreadId => GetCurrentThreadId();
+        public IntPtr ThreadId => GetCurrentThread();
         PerformanceCounter _cpuCounter =
             new PerformanceCounter("Process", "% Processor Time", Process.GetCurrentProcess().ProcessName);
         Random r = new Random();
@@ -93,5 +93,7 @@ namespace FourierTransas
 
         [DllImport("Kernel32.dll")]
         public static extern uint GetCurrentThreadId();
+        [DllImport("Kernel32.dll")]
+        private static extern IntPtr GetCurrentThread();
     }
 }

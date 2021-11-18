@@ -5,6 +5,7 @@ using NickStrupat;
 using OxyPlot;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.ComTypes;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -29,7 +30,7 @@ namespace FourierTransas
 
         ComputerInfo _info = new ComputerInfo();
         Process _currentProc = Process.GetCurrentProcess();
-        private ProcessThread[] _threads;
+        private IntPtr[] _threads;
         private uint _calcThreadId;
         private List<DataPoint> _cpuSamples;
         private List<DataPoint> _ramSamples;
@@ -37,7 +38,7 @@ namespace FourierTransas
         public PlotModel RamModel { get; private set; }
 
         //todo: fix over 100% "load"
-        
+
         public MonitorService()
         {
             ThreadModel = new PlotModel
@@ -79,22 +80,22 @@ namespace FourierTransas
             _ramSamples = (RamModel.Series[0] as LineSeries).Points;
         }
 
-        public void OnStart(uint mainThreadId, uint calcThreadId)
+        public void OnStart(IntPtr mainThreadId, IntPtr calcThreadId)
         {
-           var processThreads = _currentProc.Threads
+            var processThreads = _currentProc.Threads
                 .Cast<ProcessThread>()
                 .ToArray();
-            
-            _threads = new ProcessThread[2];
+
+            _threads = new IntPtr[3];
             // [1] не найден
             // вы полнился и "удалился/сменил id?"
-            _threads[0] = processThreads.FirstOrDefault(p => p.Id == mainThreadId);
-            _threads[1] = processThreads.FirstOrDefault(p => p.Id == GetCurrentThreadId());
-            _calcThreadId = calcThreadId;
+            _threads[0] = mainThreadId;
+            _threads[1] = GetCurrentThread();
+            _threads[2] = calcThreadId;
 
             _timer = new Timer(1000);
             _timer.Elapsed += CpuRamUsage;
-            
+
             //_timer.Elapsed += CheckCPULimit();
             _timer.Enabled = true;
         }
@@ -116,53 +117,37 @@ namespace FourierTransas
 
         public double CurrentCpuLoad()
         {
-            return _cpuCounter.NextValue()/Environment.ProcessorCount;
+            return _cpuCounter.NextValue() / Environment.ProcessorCount;
         }
 
         private void CpuRamUsage(object sender, ElapsedEventArgs e)
         {
             _ramSamples.Add(new DataPoint(_ramSamples.Count + 1, CurrentMemoryLoad()));
-            
-            var calcThread =_currentProc.Threads
-                .Cast<ProcessThread>()
-                .FirstOrDefault(p => p.Id == _calcThreadId);
-            
+
+            // var calcThread =_currentProc.Threads
+            //     .Cast<ProcessThread>()
+            //     .FirstOrDefault(p => p.Id == _calcThreadId);
+
             var x = _cpuSamples.Count;
             var load = CurrentCpuLoad();
             _cpuSamples.Add(new DataPoint(x, load));
             for (int i = 0; i < _threads.Length; i++)
             {
-                if (_threads[i] != null)
-                {
-                    var point = new DataPoint(x,
-                        load * (_threads[i].UserProcessorTime / _currentProc.UserProcessorTime));
+                QueryThreadCycleTime(_threads[i], out ulong t);
+                var time = TimeSpan.FromTicks((long) t);
 
-                    lock (ThreadModel.SyncRoot)
-                    {
-                        (ThreadModel.Series[i] as LineSeries).Points.Add(point);
-                    }
-                }
-                else
-                {
-                    Console.WriteLine(_threads[i]?.Id + " not found");
-                }
-            }
+                var point = new DataPoint(x,
+                    load * (time / _currentProc.UserProcessorTime));
 
-            try
-            {
                 lock (ThreadModel.SyncRoot)
                 {
-                    (ThreadModel.Series[3] as LineSeries).Points.Add(
-                        new DataPoint(x, load * calcThread.UserProcessorTime / _currentProc.UserProcessorTime));
+                    (ThreadModel.Series[i] as LineSeries).Points.Add(point);
                 }
             }
-            catch
-            {
-            }
-
         }
 
         private readonly int cpuLimit = 30;
+
         private void CheckCPULimit()
         {
             Func<double, double> f = d =>
@@ -175,5 +160,15 @@ namespace FourierTransas
 
         [DllImport("Kernel32.dll")]
         private static extern uint GetCurrentThreadId();
+
+        [DllImport("Kernel32.dll")]
+        private static extern IntPtr GetCurrentThread();
+
+        [DllImport("Kernel32.dll")]
+        private static extern bool GetThreadTimes(IntPtr hThread,
+            out FILETIME lpCreationTime, out FILETIME lpExitTime, out FILETIME lpKernelTime, out FILETIME lpUserTime);
+
+        [DllImport("Kernel32.dll")]
+        private static extern bool QueryThreadCycleTime(IntPtr ThreadHandle, out ulong CycleTime);
     }
 }

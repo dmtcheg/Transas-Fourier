@@ -19,7 +19,7 @@ namespace FourierTransas
         private MonitorService _service;
         private DispatcherTimer _dTimer;
 
-        public ResourceControl(MonitorService service, uint mainThreadId, uint calcThreadId)
+        public ResourceControl(MonitorService service, IntPtr mainThreadId, IntPtr calcThreadId)
         {
             InitializeComponent();
             
