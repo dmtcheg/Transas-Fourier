@@ -30,6 +30,7 @@ namespace FourierTransas
         ComputerInfo _info = new ComputerInfo();
         Process _currentProc = Process.GetCurrentProcess();
         private ProcessThread[] _threads;
+        private uint _calcThreadId;
         private List<DataPoint> _cpuSamples;
         private List<DataPoint> _ramSamples;
         public PlotModel ThreadModel { get; private set; }
@@ -51,9 +52,9 @@ namespace FourierTransas
             ThreadModel.Series.Add(new LineSeries()
                 {Color = OxyColors.Orange, Title = "plot render", Decimator = Decimator.Decimate});
             ThreadModel.Series.Add(new LineSeries()
-                {Color = OxyColors.Brown, Title = "calc", Decimator = Decimator.Decimate});
-            ThreadModel.Series.Add(new LineSeries()
                 {Color = OxyColors.Blue, Title = "recource monitor", Decimator = Decimator.Decimate});
+            ThreadModel.Series.Add(new LineSeries()
+                {Color = OxyColors.Brown, Title = "calc", Decimator = Decimator.Decimate});
 
             ThreadModel.Legends.Add(new Legend
             {
@@ -84,11 +85,12 @@ namespace FourierTransas
                 .Cast<ProcessThread>()
                 .ToArray();
             
-            _threads = new ProcessThread[3];
-            // 0 1 совпадают
+            _threads = new ProcessThread[2];
+            // [1] не найден
+            // вы полнился и "удалился/сменил id?"
             _threads[0] = processThreads.FirstOrDefault(p => p.Id == mainThreadId);
-            _threads[1] = processThreads.FirstOrDefault(p => p.Id == calcThreadId);
-            _threads[2] = processThreads.FirstOrDefault(p => p.Id == GetCurrentThreadId());
+            _threads[1] = processThreads.FirstOrDefault(p => p.Id == GetCurrentThreadId());
+            _calcThreadId = calcThreadId;
 
             _timer = new Timer(1000);
             _timer.Elapsed += CpuRamUsage;
@@ -119,7 +121,11 @@ namespace FourierTransas
 
         private void CpuRamUsage(object sender, ElapsedEventArgs e)
         {
-            _ramSamples.Add(new DataPoint(_ramSamples.Count+1, CurrentMemoryLoad()));
+            _ramSamples.Add(new DataPoint(_ramSamples.Count + 1, CurrentMemoryLoad()));
+            
+            var calcThread =_currentProc.Threads
+                .Cast<ProcessThread>()
+                .FirstOrDefault(p => p.Id == _calcThreadId);
             
             var x = _cpuSamples.Count;
             var load = CurrentCpuLoad();
@@ -141,6 +147,19 @@ namespace FourierTransas
                     Console.WriteLine(_threads[i]?.Id + " not found");
                 }
             }
+
+            try
+            {
+                lock (ThreadModel.SyncRoot)
+                {
+                    (ThreadModel.Series[3] as LineSeries).Points.Add(
+                        new DataPoint(x, load * calcThread.UserProcessorTime / _currentProc.UserProcessorTime));
+                }
+            }
+            catch
+            {
+            }
+
         }
 
         private readonly int cpuLimit = 30;

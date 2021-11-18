@@ -71,13 +71,13 @@ namespace FourierTransas
         {
             // Thread resourceThread = new Thread(delegate()
             // {
-            Window resourceWindow = new Window
-            {
-                Title = "Использование ресурсов",
-                Content = new ResourceControl(_service, _mainThreadId, _calcThreadId)
-            };
-            resourceWindow.Show();
-            //Dispatcher.Run();
+                Window resourceWindow = new Window
+                {
+                    Title = "Использование ресурсов",
+                    Content = new ResourceControl(_service, _mainThreadId, _calcThreadId)
+                };
+                resourceWindow.Show();
+            //     Dispatcher.Run();
             // });
             // resourceThread.SetApartmentState(ApartmentState.STA);
             // resourceThread.IsBackground = true;

@@ -21,10 +21,10 @@ namespace FourierTransas
     {
         private PlotView[] plots;
         private DispatcherTimer _dTimer;
-        private CalculationService _service;
-        
+        //private CalculationService _service;
+
         [DllImport("Kernel32.dll")]
-        private static extern uint GetCurrentThreadId();
+        public static extern uint GetCurrentThreadId();
         
         /// <summary>
         /// эмулирует построение и обновление графика сигнала
@@ -42,18 +42,33 @@ namespace FourierTransas
                 PlotView1,
                 PlotView2
             };
-            _service = new CalculationService();
-    
-            var calcThread = new Thread(_service.OnStart);
-            calcThread.Priority = ThreadPriority.AboveNormal;
-            calcThread.IsBackground = true;
-            calcThread.Start();
 
-            PerfControl.Content = new PerformanceControl(GetCurrentThreadId(), _service.ThreadId);
+            CalculationService service = null;
+            //todo
+            
+            
+            // var calcThread = new Thread(()=>
+            // {
+            //     _service.OnStart();
+            //     calcThreadId = _service.ThreadId;
+            // });
+            // calcThread.Priority = ThreadPriority.AboveNormal;
+            // calcThread.IsBackground = true;
+            // calcThread.Start();
+            
+            Task<uint> t = Task<uint>.Factory.StartNew(() =>
+            {
+                service = new CalculationService();
+                service.OnStart();
+                return service.ThreadId;
+            }, TaskCreationOptions.LongRunning);
+            uint calcThreadId = t.Result;
+            
+            PerfControl.Content = new PerformanceControl(GetCurrentThreadId(), calcThreadId);
 
             for (int i = 0; i < plots.Length; i++)
             {
-                plots[i].Model = _service.PlotModels[i];
+                plots[i].Model = service?.PlotModels[i];
             }
             
             _dTimer = new DispatcherTimer(DispatcherPriority.Send);
