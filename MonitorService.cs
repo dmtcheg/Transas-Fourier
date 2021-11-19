@@ -4,6 +4,7 @@ using System.Diagnostics;
 using NickStrupat;
 using OxyPlot;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
 using System.Threading;
@@ -29,7 +30,7 @@ namespace FourierTransas
         PerformanceCounter _cpuCounter =
             new PerformanceCounter("Process", "% Processor Time", Process.GetCurrentProcess().ProcessName);
         ComputerInfo _info = new ComputerInfo();
-        Process _currentProc = Process.GetCurrentProcess();
+        Process _process = Process.GetCurrentProcess();
         private IntPtr[] _threads;
         private List<DataPoint> _cpuSamples;
         private List<DataPoint> _ramSamples;
@@ -87,7 +88,7 @@ namespace FourierTransas
         {
             _calculationService = service;
             
-            var processThreads = _currentProc.Threads.Cast<ProcessThread>();
+            var processThreads = _process.Threads.Cast<ProcessThread>();
             _mainThread = processThreads.First(p => p.Id == mainThrId);
             _thread = processThreads.First(p => p.Id == GetCurrentThreadId());
             
@@ -124,20 +125,26 @@ namespace FourierTransas
         {
             _cpuCounter.NextValue();
 
+            var processThread = _process.Threads.Cast<ProcessThread>().First(p => p.Id == GetCurrentThreadId());
+            var t1 = processThread.TotalProcessorTime;
+            var p1 = _process.TotalProcessorTime;
             int x =_ramSamples.Count + 1;
             _ramSamples.Add(new DataPoint(x, 100 * Environment.WorkingSet / (long) _info.TotalPhysicalMemory));
 
             lock (ThreadModel.SyncRoot)
             {
                 (ThreadModel.Series[1] as LineSeries).Points.Add(new DataPoint(x,
-                    100 * (_mainThread.UserProcessorTime / _currentProc.UserProcessorTime)));
-                (ThreadModel.Series[2] as LineSeries).Points.Add(new DataPoint(x,
-                    100 * _thread.UserProcessorTime / _currentProc.UserProcessorTime));
+                    100 * (_mainThread.UserProcessorTime / _process.UserProcessorTime)));
                 (ThreadModel.Series[3] as LineSeries).Points.Add(new DataPoint(x,
                     100 * _calculationService.CounterValue));
             }
-
             _cpuSamples.Add(new DataPoint(x,_cpuCounter.NextValue()/Environment.ProcessorCount));
+            double v = (processThread.UserProcessorTime - t1) / (_process.UserProcessorTime - p1);
+            lock (ThreadModel.SyncRoot)
+            {
+                (ThreadModel.Series[2] as LineSeries).Points.Add(new DataPoint(x, 100 * v));
+            }
+
 
         }
 
