@@ -4,12 +4,12 @@ using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
-using System.Timers;
-using System.Windows.Threading;
+using System.Threading;
 using MathNet.Numerics;
 using MathNet.Numerics.IntegralTransforms;
 using OxyPlot;
 using OxyPlot.Series;
+using Timer = System.Timers.Timer;
 
 namespace FourierTransas
 {
@@ -17,15 +17,18 @@ namespace FourierTransas
     {
         public List<PlotModel> PlotModels { get; private set; }
         private List<DataPoint>[] points;
+        public double CounterValue { get; set; }
         private int length;
         private Timer _timer;
-        public IntPtr ThreadId => GetCurrentThread();
+        public IntPtr ThreadId { get; private set; }
         PerformanceCounter _cpuCounter =
             new PerformanceCounter("Process", "% Processor Time", Process.GetCurrentProcess().ProcessName);
         Random r = new Random();
 
         public CalculationService()
         {
+            Thread.BeginThreadAffinity();
+
             FFTModel[] models = new FFTModel[]
             {
                 new(2000, 15),
@@ -58,8 +61,11 @@ namespace FourierTransas
 
         private void UpdatePoints()
         {
-            _cpuCounter.NextValue();
-
+            var process = Process.GetCurrentProcess(); 
+            var p1 = process.UserProcessorTime;
+            var processThread = process.Threads.Cast<ProcessThread>().First(p => p.Id == GetCurrentThreadId());
+            var t1 = processThread.UserProcessorTime;
+            
             double[] gen = Generate.Sinusoidal(length, length * 2, r.Next(0, 199999), r.Next(0, 100));
             Complex[] complex = new Complex[length];
             for (int j = 0; j < length; j++) complex[j] = new Complex(gen[j], 0);
@@ -78,15 +84,18 @@ namespace FourierTransas
                     }
                 }
             }
+
+            // to %
+            CounterValue = (processThread.UserProcessorTime - t1) / (process.UserProcessorTime - p1);
         }
 
-        private readonly int cpuLimit = 30;
+        private readonly int cpuLimit = 20;
         private void CheckCPULimit()
         {
             Func<double, double> f = d =>
             {
                 _timer.Interval = d;
-                return _cpuCounter.NextValue() / Environment.ProcessorCount - cpuLimit;
+                return CounterValue;
             };
             _timer.Interval = MathNet.Numerics.RootFinding.Bisection.FindRoot(f, 50, 600, 3, 3);
         }

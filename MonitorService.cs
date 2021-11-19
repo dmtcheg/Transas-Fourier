@@ -23,24 +23,25 @@ namespace FourierTransas
     /// </summary>
     public class MonitorService : IDisposable
     {
+        public CalculationService _calculationService { get; private set; }
         private Timer _timer;
 
         PerformanceCounter _cpuCounter =
             new PerformanceCounter("Process", "% Processor Time", Process.GetCurrentProcess().ProcessName);
-
         ComputerInfo _info = new ComputerInfo();
         Process _currentProc = Process.GetCurrentProcess();
         private IntPtr[] _threads;
-        private uint _calcThreadId;
         private List<DataPoint> _cpuSamples;
         private List<DataPoint> _ramSamples;
         public PlotModel ThreadModel { get; private set; }
         public PlotModel RamModel { get; private set; }
+        public double CounterValue { get; private set; }
 
         //todo: fix over 100% "load"
 
         public MonitorService()
         {
+            
             ThreadModel = new PlotModel
             {
                 Title = "CPU",
@@ -80,25 +81,24 @@ namespace FourierTransas
             _ramSamples = (RamModel.Series[0] as LineSeries).Points;
         }
 
-        public void OnStart(IntPtr mainThreadId, IntPtr calcThreadId)
+        private ProcessThread _mainThread;
+        private ProcessThread _thread;
+        public void OnStart(uint mainThrId, CalculationService service)
         {
-            var processThreads = _currentProc.Threads
-                .Cast<ProcessThread>()
-                .ToArray();
-
-            _threads = new IntPtr[3];
-            // [1] не найден
-            // вы полнился и "удалился/сменил id?"
-            _threads[0] = mainThreadId;
-            _threads[1] = GetCurrentThread();
-            _threads[2] = calcThreadId;
-
+            _calculationService = service;
+            
+            var processThreads = _currentProc.Threads.Cast<ProcessThread>();
+            _mainThread = processThreads.First(p => p.Id == mainThrId);
+            _thread = processThreads.First(p => p.Id == GetCurrentThreadId());
+            
             _timer = new Timer(1000);
             _timer.Elapsed += CpuRamUsage;
 
             //_timer.Elapsed += CheckCPULimit();
             _timer.Enabled = true;
+            //_timer.AutoReset = false;
         }
+
 
         public void OnStop()
         {
@@ -122,38 +122,34 @@ namespace FourierTransas
 
         private void CpuRamUsage(object sender, ElapsedEventArgs e)
         {
-            _ramSamples.Add(new DataPoint(_ramSamples.Count + 1, CurrentMemoryLoad()));
+            _cpuCounter.NextValue();
 
-            // var calcThread =_currentProc.Threads
-            //     .Cast<ProcessThread>()
-            //     .FirstOrDefault(p => p.Id == _calcThreadId);
+            int x =_ramSamples.Count + 1;
+            _ramSamples.Add(new DataPoint(x, 100 * Environment.WorkingSet / (long) _info.TotalPhysicalMemory));
 
-            var x = _cpuSamples.Count;
-            var load = CurrentCpuLoad();
-            _cpuSamples.Add(new DataPoint(x, load));
-            for (int i = 0; i < _threads.Length; i++)
+            lock (ThreadModel.SyncRoot)
             {
-                QueryThreadCycleTime(_threads[i], out ulong t);
-                var time = TimeSpan.FromTicks((long) t);
-
-                var point = new DataPoint(x,
-                    load * (time / _currentProc.UserProcessorTime));
-
-                lock (ThreadModel.SyncRoot)
-                {
-                    (ThreadModel.Series[i] as LineSeries).Points.Add(point);
-                }
+                (ThreadModel.Series[1] as LineSeries).Points.Add(new DataPoint(x,
+                    100 * (_mainThread.UserProcessorTime / _currentProc.UserProcessorTime)));
+                (ThreadModel.Series[2] as LineSeries).Points.Add(new DataPoint(x,
+                    100 * _thread.UserProcessorTime / _currentProc.UserProcessorTime));
+                (ThreadModel.Series[3] as LineSeries).Points.Add(new DataPoint(x,
+                    100 * _calculationService.CounterValue));
             }
+
+            _cpuSamples.Add(new DataPoint(x,_cpuCounter.NextValue()/Environment.ProcessorCount));
+
         }
 
-        private readonly int cpuLimit = 30;
+        private readonly int cpuLimit = 10;
+        
 
         private void CheckCPULimit()
         {
             Func<double, double> f = d =>
             {
                 _timer.Interval = d;
-                return CurrentCpuLoad() - cpuLimit;
+                return CounterValue - cpuLimit;
             };
             _timer.Interval = MathNet.Numerics.RootFinding.Bisection.FindRoot(f, 200, 800, 3, 3);
         }

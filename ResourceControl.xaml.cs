@@ -16,29 +16,19 @@ namespace FourierTransas
 {
     public partial class ResourceControl : UserControl
     {
-        private MonitorService _service;
+        //private MonitorService _service;
         private DispatcherTimer _dTimer;
 
-        public ResourceControl(MonitorService service, IntPtr mainThreadId, IntPtr calcThreadId)
+        public ResourceControl(MonitorService service)
         {
             InitializeComponent();
             
-            _service = service;
             MemControl.Content = new MemoryControl(service);
 
-            var monitorThread = new Thread(delegate()
-            {
-                _service.OnStart(mainThreadId, calcThreadId);
-            });
-            monitorThread.Priority = ThreadPriority.AboveNormal;
-            monitorThread.IsBackground = true;
-            
-            monitorThread.Start();
-            
             SkiaRenderContext rc = new SkiaRenderContext() {SkCanvas = new SKCanvas(new SKBitmap(400, 400))};
             rc.RenderTarget = RenderTarget.Screen;
 
-            CpuPlotView.Model = _service.ThreadModel;
+            CpuPlotView.Model = service.ThreadModel;
             (CpuPlotView.Model as IPlotModel).Render(rc, CpuPlotView.Model.PlotArea);
 
             _dTimer = new DispatcherTimer(DispatcherPriority.Normal);

@@ -37,7 +37,7 @@ namespace FourierTransas
             Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.RealTime;
             SkiaRenderContext rc = new SkiaRenderContext() {SkCanvas = new SKCanvas(new SKBitmap(1000, 800))};
             rc.RenderTarget = RenderTarget.Screen;
-            
+
             plots = new PlotView[]
             {
                 PlotView0,
@@ -48,26 +48,23 @@ namespace FourierTransas
             CalculationService service = null;
             //todo
 
-            var calcThreadId =IntPtr.Zero;
-            var calcThread = new Thread(()=>
-            {
-                service = new CalculationService();
-                service.OnStart();
-                calcThreadId = service.ThreadId;
-            });
-            calcThread.Priority = ThreadPriority.AboveNormal;
-            calcThread.IsBackground = true;
-            calcThread.Start();
-            
-            // Task<uint> t = Task<uint>.Factory.StartNew(() =>
+            // var calcThreadId =IntPtr.Zero;
+            // var calcThread = new Thread(()=>
             // {
             //     service = new CalculationService();
             //     service.OnStart();
-            //     return service.ThreadId;
-            // }, TaskCreationOptions.LongRunning);
-            // uint calcThreadId = t.Result;
-            calcThread.Join();
-            PerfControl.Content = new PerformanceControl(GetCurrentThread(), calcThreadId);
+            // });
+            // calcThread.Priority = ThreadPriority.AboveNormal;
+            // calcThread.IsBackground = true;
+            // calcThread.Start();
+            
+            service = new CalculationService();
+            Task t = Task.Factory.StartNew(() =>
+            {
+                service.OnStart();
+            }, TaskCreationOptions.LongRunning);
+            
+            PerfControl.Content = new PerformanceControl(GetCurrentThreadId(), service);
 
             for (int i = 0; i < plots.Length; i++)
             {

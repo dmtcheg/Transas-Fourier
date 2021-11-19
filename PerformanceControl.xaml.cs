@@ -17,8 +17,6 @@ namespace FourierTransas
 {
     public partial class PerformanceControl : UserControl
     {
-        private readonly IntPtr _mainThreadId;
-        private readonly IntPtr _calcThreadId;
         private MonitorService _service;
         private DispatcherTimer _dTimer;
         private List<BarItem> items;
@@ -26,19 +24,29 @@ namespace FourierTransas
         /// <summary>
         /// потребление ресурсов процессора и оперативной памяти приложением
         /// </summary>
-        public PerformanceControl(IntPtr mainThreadId, IntPtr calcThreadId)
+        public PerformanceControl(uint mainThreadId, CalculationService service)
         {
-            // can id be changed?
-            _mainThreadId = mainThreadId;
-            _calcThreadId = calcThreadId;
-
             InitializeComponent();
 
             SkiaRenderContext rc = new SkiaRenderContext() {SkCanvas = new SKCanvas(new SKBitmap(300, 300))};
             rc.RenderTarget = RenderTarget.Screen;
 
-            _service = new MonitorService();
 
+            // Thread t = new Thread(() =>
+            // {
+            //     _service = new MonitorService(mainThreadId, service);
+            //     _service.OnStart();
+            // });
+            // t.Priority = ThreadPriority.AboveNormal;
+            // t.IsBackground = true;
+            // t.Start();
+            // t.Join();
+            _service = new MonitorService();
+            Task t = Task.Factory.StartNew(()=>
+            {
+                _service.OnStart(mainThreadId, service);
+            }, TaskCreationOptions.LongRunning);
+            
             var resourceModel = new PlotModel();
             var s = new BarSeries();
             s.Items.Add(new BarItem(0));
@@ -74,7 +82,7 @@ namespace FourierTransas
                 Window resourceWindow = new Window
                 {
                     Title = "Использование ресурсов",
-                    Content = new ResourceControl(_service, _mainThreadId, _calcThreadId)
+                    Content = new ResourceControl(_service)
                 };
                 resourceWindow.Show();
             //     Dispatcher.Run();
