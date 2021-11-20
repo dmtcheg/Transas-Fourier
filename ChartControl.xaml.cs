@@ -77,12 +77,20 @@ namespace FourierTransas
             _dTimer.IsEnabled = true;
         }
         
+        public static double CounterValue { get; private set; }
+        private PerformanceCounter _timeCounter = new PerformanceCounter();
         private void SignalPlot(object sender, EventArgs e)
         {
+            var process = Process.GetCurrentProcess();
+            var processThread = process.Threads.Cast<ProcessThread>().First(p => p.Id == GetCurrentThreadId());
+            var t1 = processThread.TotalProcessorTime;
+            var p1 = process.TotalProcessorTime;
+            
             for (int i = 0; i < plots.Length; i++)
             {
                 plots[i].InvalidatePlot(true);
             }
+            CounterValue = (processThread.UserProcessorTime - t1) / (process.UserProcessorTime - p1);
         }
     }
 }

@@ -130,11 +130,10 @@ namespace FourierTransas
             var p1 = _process.TotalProcessorTime;
             int x =_ramSamples.Count + 1;
             _ramSamples.Add(new DataPoint(x, 100 * Environment.WorkingSet / (long) _info.TotalPhysicalMemory));
-
             lock (ThreadModel.SyncRoot)
             {
                 (ThreadModel.Series[1] as LineSeries).Points.Add(new DataPoint(x,
-                    100 * (_mainThread.UserProcessorTime / _process.UserProcessorTime)));
+                    100 * (ChartControl.CounterValue)));
                 (ThreadModel.Series[3] as LineSeries).Points.Add(new DataPoint(x,
                     100 * _calculationService.CounterValue));
             }
@@ -144,8 +143,6 @@ namespace FourierTransas
             {
                 (ThreadModel.Series[2] as LineSeries).Points.Add(new DataPoint(x, 100 * v));
             }
-
-
         }
 
         private readonly int cpuLimit = 10;
