@@ -90,7 +90,7 @@ namespace FourierTransas
             CounterValue = (processThread.UserProcessorTime - t1) / (process.UserProcessorTime - p1)/Environment.ProcessorCount;
         }
 
-        private readonly int cpuLimit = 20;
+        private readonly int cpuLimit = 30;
         private void CheckCPULimit()
         {
             Func<double, double> f = d =>
