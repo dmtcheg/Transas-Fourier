@@ -2,7 +2,6 @@
 using System.Windows.Controls;
 using System.Windows.Threading;
 using OxyPlot;
-using OxyPlot.Series;
 using OxyPlot.SkiaSharp;
 using SkiaSharp;
 
@@ -11,12 +10,10 @@ namespace FourierTransas
     public partial class MemoryControl : UserControl
     {
         private DispatcherTimer _dTimer;
-        private MonitorService _service;
 
         public MemoryControl(MonitorService service)
         {
             InitializeComponent();
-            //_service = service;
             SkiaRenderContext rc = new SkiaRenderContext() {SkCanvas = new SKCanvas(new SKBitmap(400, 200))};
             rc.RenderTarget = RenderTarget.Screen;
 

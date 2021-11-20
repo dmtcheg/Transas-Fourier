@@ -55,13 +55,14 @@ namespace FourierTransas
         {
             ChartControl.CpuLimit = PlotSlider.Value;
         }
-        private void Calc_LimitChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            _calculationService.CpuLimit = CalcSlider.Value;
-        }
         private void Monitor_LimitChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             _monitorService.CpuLimit = MonitorSlider.Value;
         }
+        private void Calc_LimitChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            _calculationService.CpuLimit = CalcSlider.Value;
+        }
+        
     }
 }

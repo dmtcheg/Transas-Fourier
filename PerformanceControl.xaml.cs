@@ -21,7 +21,6 @@ namespace FourierTransas
         private CalculationService _service;
         private DispatcherTimer _dTimer;
         private List<BarItem> items;
-        private Thread monitorThread;
 
         public PerformanceControl(CalculationService service)
         {
