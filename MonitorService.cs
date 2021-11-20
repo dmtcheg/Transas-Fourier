@@ -88,8 +88,6 @@ namespace FourierTransas
         public void Dispose()
         {
             _timer.Enabled = false;
-            RamModel = new PlotModel();
-            ThreadModel = new PlotModel();
         }
         
         [DllImport("Kernel32.dll")]

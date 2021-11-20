@@ -79,6 +79,7 @@ namespace FourierTransas
                     Title = "Использование ресурсов",
                     Content = new ResourceControl(_service),
                 };
+                resourceWindow.Closed += (o, args) => (resourceWindow.Content as ResourceControl).Dispose();
                 resourceWindow.Show();
                 Dispatcher.Run();
             });

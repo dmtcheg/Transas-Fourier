@@ -11,11 +11,12 @@ namespace FourierTransas
     public partial class ResourceControl : UserControl
     {
         private DispatcherTimer _dTimer;
-        
+        private MonitorService service;
+
         public ResourceControl(CalculationService cs)
         {
             InitializeComponent();
-            var service = new MonitorService(cs);
+            service = new MonitorService(cs);
 
             var monitorThread = new Thread(service.OnStart);
             monitorThread.Priority = ThreadPriority.AboveNormal;
@@ -39,6 +40,11 @@ namespace FourierTransas
         private void ResourceUsagePlot(object sender, EventArgs e)
         {
             CpuPlotView.InvalidatePlot(true);
+        }
+        
+        public void Dispose()
+        {
+            service?.Dispose();
         }
     }
 }
