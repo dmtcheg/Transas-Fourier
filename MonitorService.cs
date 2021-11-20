@@ -130,13 +130,13 @@ namespace FourierTransas
 
         }
 
-        private readonly int cpuLimit = 5;
+        public double CpuLimit { get; set; } = 5;
         private void CheckCPULimit(object sender, EventArgs e)
         {
             Func<double, double> f = d =>
             {
                 _timer.Interval = d;
-                return CounterValue - cpuLimit;
+                return CounterValue - CpuLimit;
             };
             _timer.Interval = MathNet.Numerics.RootFinding.Bisection.FindRoot(f, 200, 1000, 3, 3);
         }

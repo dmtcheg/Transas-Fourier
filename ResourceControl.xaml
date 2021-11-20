@@ -5,16 +5,22 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:skia="clr-namespace:OxyPlot.SkiaSharp.Wpf;assembly=OxyPlot.SkiaSharp.Wpf"
              mc:Ignorable="d"
-             d:DesignHeight="200" d:DesignWidth="400">
+             d:DesignHeight="650" d:DesignWidth="400">
     <Grid>
         <Grid.RowDefinitions>
         <RowDefinition Height="300"/>
         <RowDefinition Height="200"/>
+        <RowDefinition Height="150"/>
         </Grid.RowDefinitions>
         <ContentControl Grid.Row="0">
             <skia:PlotView Name="CpuPlotView"/>
         </ContentControl>
         <ContentControl Grid.Row="1" Name="MemControl">
         </ContentControl>
+        <StackPanel Grid.Row="2">
+            <Slider Name="CalcSlider" Value="30" Minimum="0" Maximum="100" SmallChange="1" Orientation="Horizontal" ValueChanged="Calc_LimitChanged"/>
+            <Slider Name="PlotSlider" Value="10" Minimum="0" Maximum="100" SmallChange="1" Orientation="Horizontal" ValueChanged="PlotRender_LimitChanged"/>
+            <Slider Name="MonitorSlider" Value="5" Minimum="0" Maximum="100" SmallChange="1" Orientation="Horizontal" ValueChanged="Monitor_LimitChanged"/>
+        </StackPanel>
     </Grid>
 </UserControl>

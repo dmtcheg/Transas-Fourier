@@ -5,30 +5,34 @@ using System.Windows.Threading;
 using OxyPlot;
 using OxyPlot.SkiaSharp;
 using SkiaSharp;
+using System.Windows;
 
 namespace FourierTransas
 {
     public partial class ResourceControl : UserControl
     {
         private DispatcherTimer _dTimer;
-        private MonitorService service;
+        private MonitorService _monitorService;
+        private CalculationService _calculationService;
 
         public ResourceControl(CalculationService cs)
         {
-            InitializeComponent();
-            service = new MonitorService(cs);
+            _calculationService = cs;
+            _monitorService = new MonitorService(cs);
 
-            var monitorThread = new Thread(service.OnStart);
+            InitializeComponent();
+
+            var monitorThread = new Thread(_monitorService.OnStart);
             monitorThread.Priority = ThreadPriority.AboveNormal;
             monitorThread.IsBackground = true;
             monitorThread.Start();
             
-            MemControl.Content = new MemoryControl(service);
+            MemControl.Content = new MemoryControl(_monitorService);
 
             SkiaRenderContext rc = new SkiaRenderContext() {SkCanvas = new SKCanvas(new SKBitmap(400, 400))};
             rc.RenderTarget = RenderTarget.Screen;
 
-            CpuPlotView.Model = service.ThreadModel;
+            CpuPlotView.Model = _monitorService.ThreadModel;
             (CpuPlotView.Model as IPlotModel).Render(rc, CpuPlotView.Model.PlotArea);
 
             _dTimer = new DispatcherTimer(DispatcherPriority.Normal);
@@ -41,10 +45,23 @@ namespace FourierTransas
         {
             CpuPlotView.InvalidatePlot(true);
         }
-        
+
         public void Dispose()
         {
-            service?.Dispose();
+            _monitorService?.Dispose();
+        }
+
+        private void PlotRender_LimitChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            ChartControl.CpuLimit = PlotSlider.Value;
+        }
+        private void Calc_LimitChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            _calculationService.CpuLimit = CalcSlider.Value;
+        }
+        private void Monitor_LimitChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            _monitorService.CpuLimit = MonitorSlider.Value;
         }
     }
 }

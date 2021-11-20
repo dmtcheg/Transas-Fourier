@@ -31,16 +31,6 @@ namespace FourierTransas
             rc.RenderTarget = RenderTarget.Screen;
 
             _service = service;
-            //
-            // monitorThread = new Thread(() => { _service.OnStart(); });
-            // monitorThread.Priority = ThreadPriority.AboveNormal;
-            // monitorThread.IsBackground = true;
-            // monitorThread.Start();
-
-            // Task t = Task.Factory.StartNew(()=>
-            // {
-            //     _service.OnStart(service);
-            // }, TaskCreationOptions.LongRunning);
 
             var resourceModel = new PlotModel();
             var s = new BarSeries();

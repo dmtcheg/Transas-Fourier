@@ -70,6 +70,8 @@ namespace FourierTransas
         
         public static double CounterValue { get; private set; }
         private Process _process = Process.GetCurrentProcess();
+        public static double CpuLimit { get; set; } = 10;
+
         private void SignalPlot(object sender, EventArgs e)
         {
             var processThread = _process.Threads.Cast<ProcessThread>().First(p => p.Id == GetCurrentThreadId());
@@ -81,6 +83,15 @@ namespace FourierTransas
                 plots[i].InvalidatePlot(true);
             }
             CounterValue = (processThread.UserProcessorTime - t1) / (_process.UserProcessorTime - p1)/Environment.ProcessorCount;
+        }
+        private void CheckCPULimit()
+        {
+            Func<double, double> f = d =>
+            {
+                _dTimer.Interval = TimeSpan.FromMilliseconds(d);
+                return CounterValue - CpuLimit;
+            };
+            _dTimer.Interval = TimeSpan.FromMilliseconds(MathNet.Numerics.RootFinding.Bisection.FindRoot(f, 100, 600, 3, 4));
         }
     }
 }

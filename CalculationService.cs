@@ -89,13 +89,13 @@ namespace FourierTransas
             CounterValue = (processThread.UserProcessorTime - t1) / (process.UserProcessorTime - p1)/Environment.ProcessorCount;
         }
 
-        private readonly int cpuLimit = 30;
+        public double CpuLimit { get; set; } = 30;
         private void CheckCPULimit()
         {
             Func<double, double> f = d =>
             {
                 _timer.Interval = d;
-                return CounterValue - cpuLimit;
+                return CounterValue - CpuLimit;
             };
             _timer.Interval = MathNet.Numerics.RootFinding.Bisection.FindRoot(f, 50, 600, 3, 5);
         }
