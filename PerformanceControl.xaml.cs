@@ -18,10 +18,11 @@ namespace FourierTransas
     /// </summary>
     public partial class PerformanceControl : UserControl
     {
-        private MonitorService _service;
+        private CalculationService _service;
         private DispatcherTimer _dTimer;
         private List<BarItem> items;
-        
+        private Thread monitorThread;
+
         public PerformanceControl(CalculationService service)
         {
             InitializeComponent();
@@ -29,21 +30,18 @@ namespace FourierTransas
             SkiaRenderContext rc = new SkiaRenderContext() {SkCanvas = new SKCanvas(new SKBitmap(300, 300))};
             rc.RenderTarget = RenderTarget.Screen;
 
-            _service = new MonitorService();
+            _service = service;
+            //
+            // monitorThread = new Thread(() => { _service.OnStart(); });
+            // monitorThread.Priority = ThreadPriority.AboveNormal;
+            // monitorThread.IsBackground = true;
+            // monitorThread.Start();
 
-            Thread monitorThread = new Thread(() =>
-            {
-                _service.OnStart(service);
-            });
-            monitorThread.Priority = ThreadPriority.AboveNormal;
-            monitorThread.IsBackground = true;
-            monitorThread.Start();
-            
             // Task t = Task.Factory.StartNew(()=>
             // {
             //     _service.OnStart(service);
             // }, TaskCreationOptions.LongRunning);
-            
+
             var resourceModel = new PlotModel();
             var s = new BarSeries();
             s.Items.Add(new BarItem(0));
@@ -67,8 +65,8 @@ namespace FourierTransas
 
         private void PerformanceBar()
         {
-            items[0] = new BarItem(_service.CurrentMemoryLoad());
-            items[1] = new BarItem(_service.CurrentCpuLoad());
+            items[0] = new BarItem(MonitorService.CurrentMemoryLoad());
+            items[1] = new BarItem(MonitorService.CurrentCpuLoad());
             PerformancePlotView.InvalidatePlot(true);
         }
 
@@ -79,7 +77,7 @@ namespace FourierTransas
                 Window resourceWindow = new Window
                 {
                     Title = "Использование ресурсов",
-                    Content = new ResourceControl(_service)
+                    Content = new ResourceControl(_service),
                 };
                 resourceWindow.Show();
                 Dispatcher.Run();

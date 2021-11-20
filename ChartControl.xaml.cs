@@ -28,6 +28,7 @@ namespace FourierTransas
         
         public ChartControl()
         {
+            Thread.BeginThreadAffinity();
             InitializeComponent();
             Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.RealTime;
             SkiaRenderContext rc = new SkiaRenderContext() {SkCanvas = new SKCanvas(new SKBitmap(1000, 800))};
@@ -72,8 +73,8 @@ namespace FourierTransas
         private void SignalPlot(object sender, EventArgs e)
         {
             var processThread = _process.Threads.Cast<ProcessThread>().First(p => p.Id == GetCurrentThreadId());
-            var t1 = processThread.TotalProcessorTime;
-            var p1 = _process.TotalProcessorTime;
+            var t1 = processThread.UserProcessorTime;
+            var p1 = _process.UserProcessorTime;
             
             for (int i = 0; i < plots.Length; i++)
             {

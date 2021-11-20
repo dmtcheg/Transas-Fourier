@@ -27,8 +27,6 @@ namespace FourierTransas
 
         public CalculationService()
         {
-            Thread.BeginThreadAffinity();
-
             FFTModel[] models = new FFTModel[]
             {
                 new(2000, 15),
@@ -46,6 +44,7 @@ namespace FourierTransas
 
         public void OnStart()
         {
+            Thread.BeginThreadAffinity();
             _timer.Enabled = true;
         }
 

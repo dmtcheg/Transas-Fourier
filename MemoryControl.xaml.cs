@@ -2,6 +2,7 @@
 using System.Windows.Controls;
 using System.Windows.Threading;
 using OxyPlot;
+using OxyPlot.Series;
 using OxyPlot.SkiaSharp;
 using SkiaSharp;
 
@@ -15,11 +16,11 @@ namespace FourierTransas
         public MemoryControl(MonitorService service)
         {
             InitializeComponent();
-            _service = service;
+            //_service = service;
             SkiaRenderContext rc = new SkiaRenderContext() {SkCanvas = new SKCanvas(new SKBitmap(400, 200))};
             rc.RenderTarget = RenderTarget.Screen;
 
-            RamPlotView.Model = _service.RamModel;
+            RamPlotView.Model = service.RamModel;
             (RamPlotView.Model as IPlotModel).Render(rc, RamPlotView.Model.PlotArea);
 
             _dTimer = new DispatcherTimer(DispatcherPriority.Normal);

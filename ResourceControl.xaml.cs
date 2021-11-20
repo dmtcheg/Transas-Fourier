@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Windows.Controls;
 using System.Windows.Threading;
 using OxyPlot;
@@ -10,10 +11,16 @@ namespace FourierTransas
     public partial class ResourceControl : UserControl
     {
         private DispatcherTimer _dTimer;
-
-        public ResourceControl(MonitorService service)
+        
+        public ResourceControl(CalculationService cs)
         {
             InitializeComponent();
+            var service = new MonitorService(cs);
+
+            var monitorThread = new Thread(service.OnStart);
+            monitorThread.Priority = ThreadPriority.AboveNormal;
+            monitorThread.IsBackground = true;
+            monitorThread.Start();
             
             MemControl.Content = new MemoryControl(service);
 

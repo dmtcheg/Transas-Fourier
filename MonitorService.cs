@@ -5,6 +5,7 @@ using NickStrupat;
 using OxyPlot;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Timers;
 using OxyPlot.Legends;
 using OxyPlot.Series;
@@ -19,9 +20,11 @@ namespace FourierTransas
     {
         public CalculationService CalculationService { get; private set; }
         private Timer _timer;
-        PerformanceCounter _cpuCounter =
+
+        static PerformanceCounter _cpuCounter =
             new PerformanceCounter("Process", "% Processor Time", Process.GetCurrentProcess().ProcessName);
-        ComputerInfo _info = new ComputerInfo();
+
+        static ComputerInfo _info = new ComputerInfo();
         Process _process = Process.GetCurrentProcess();
         private List<DataPoint> _cpuSamples;
         private List<DataPoint> _ramSamples;
@@ -29,8 +32,9 @@ namespace FourierTransas
         public PlotModel RamModel { get; private set; }
         public double CounterValue { get; private set; }
 
-        public MonitorService()
+        public MonitorService(CalculationService service)
         {
+            CalculationService = service;
             ThreadModel = new PlotModel
             {
                 Title = "CPU",
@@ -65,15 +69,14 @@ namespace FourierTransas
                 LegendFontSize = 12
             });
             _ramSamples = (RamModel.Series[0] as LineSeries).Points;
-        }
-
-        public void OnStart(CalculationService service)
-        {
-            CalculationService = service;
-
             _timer = new Timer(1000);
             _timer.Elapsed += CpuRamUsage;
             _timer.Elapsed += CheckCPULimit;
+        }
+
+        public void OnStart()
+        {
+            Thread.BeginThreadAffinity();
             _timer.Enabled = true;
         }
 
@@ -85,17 +88,19 @@ namespace FourierTransas
         public void Dispose()
         {
             _timer.Enabled = false;
+            RamModel = new PlotModel();
+            ThreadModel = new PlotModel();
         }
         
         [DllImport("Kernel32.dll")]
         private static extern uint GetCurrentThreadId();
 
-        public double CurrentMemoryLoad()
+        public static double CurrentMemoryLoad()
         {
             return 100 * Environment.WorkingSet / (long) _info.TotalPhysicalMemory;
         }
 
-        public double CurrentCpuLoad()
+        public static double CurrentCpuLoad()
         {
             return _cpuCounter.NextValue() / Environment.ProcessorCount;
         }
@@ -117,13 +122,14 @@ namespace FourierTransas
                     100 * CalculationService.CounterValue));
             }
 
-            _cpuSamples.Add(new DataPoint(x, _cpuCounter.NextValue() / Environment.ProcessorCount));
             CounterValue = (processThread.UserProcessorTime - t1) / (_process.UserProcessorTime - p1) /
                            Environment.ProcessorCount;
             lock (ThreadModel.SyncRoot)
             {
                 (ThreadModel.Series[2] as LineSeries).Points.Add(new DataPoint(x, 100 * CounterValue));
             }
+            _cpuSamples.Add(new DataPoint(x, _cpuCounter.NextValue() / Environment.ProcessorCount));
+
         }
 
         private readonly int cpuLimit = 5;
