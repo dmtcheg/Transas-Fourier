@@ -4,15 +4,8 @@ using System.Diagnostics;
 using NickStrupat;
 using OxyPlot;
 using System.Linq;
-using System.Numerics;
 using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.ComTypes;
-using System.Threading;
-using System.Threading.Channels;
-using System.Threading.Tasks;
 using System.Timers;
-using System.Windows.Threading;
-using OxyPlot.Axes;
 using OxyPlot.Legends;
 using OxyPlot.Series;
 using Timer = System.Timers.Timer;
@@ -24,40 +17,32 @@ namespace FourierTransas
     /// </summary>
     public class MonitorService : IDisposable
     {
-        public CalculationService _calculationService { get; private set; }
+        public CalculationService CalculationService { get; private set; }
         private Timer _timer;
-
         PerformanceCounter _cpuCounter =
             new PerformanceCounter("Process", "% Processor Time", Process.GetCurrentProcess().ProcessName);
         ComputerInfo _info = new ComputerInfo();
         Process _process = Process.GetCurrentProcess();
-        private IntPtr[] _threads;
         private List<DataPoint> _cpuSamples;
         private List<DataPoint> _ramSamples;
         public PlotModel ThreadModel { get; private set; }
         public PlotModel RamModel { get; private set; }
         public double CounterValue { get; private set; }
 
-        //todo: fix over 100% "load"
-
         public MonitorService()
         {
-            
             ThreadModel = new PlotModel
             {
                 Title = "CPU",
                 IsLegendVisible = true,
-                Series =
-                {
-                    new LineSeries() {Title = "Total CPU", Color = OxyColors.Green, Decimator = Decimator.Decimate}
-                }
+                Series = {new LineSeries() {Title = "Total CPU", Color = OxyColors.Green, Decimator = Decimator.Decimate}}
             };
             ThreadModel.Series.Add(new LineSeries()
                 {Color = OxyColors.Orange, Title = "plot render", Decimator = Decimator.Decimate});
             ThreadModel.Series.Add(new LineSeries()
                 {Color = OxyColors.Blue, Title = "recource monitor", Decimator = Decimator.Decimate});
             ThreadModel.Series.Add(new LineSeries()
-                {Color = OxyColors.Brown, Title = "calc", Decimator = Decimator.Decimate});
+                {Color = OxyColors.Brown, Title = "calculation", Decimator = Decimator.Decimate});
 
             ThreadModel.Legends.Add(new Legend
             {
@@ -82,24 +67,15 @@ namespace FourierTransas
             _ramSamples = (RamModel.Series[0] as LineSeries).Points;
         }
 
-        private ProcessThread _mainThread;
-        private ProcessThread _thread;
-        public void OnStart(uint mainThrId, CalculationService service)
+        public void OnStart(CalculationService service)
         {
-            _calculationService = service;
-            
-            var processThreads = _process.Threads.Cast<ProcessThread>();
-            _mainThread = processThreads.First(p => p.Id == mainThrId);
-            _thread = processThreads.First(p => p.Id == GetCurrentThreadId());
-            
+            CalculationService = service;
+
             _timer = new Timer(1000);
             _timer.Elapsed += CpuRamUsage;
-
-            //_timer.Elapsed += CheckCPULimit();
+            _timer.Elapsed += CheckCPULimit;
             _timer.Enabled = true;
-            //_timer.AutoReset = false;
         }
-
 
         public void OnStop()
         {
@@ -110,6 +86,9 @@ namespace FourierTransas
         {
             _timer.Enabled = false;
         }
+        
+        [DllImport("Kernel32.dll")]
+        private static extern uint GetCurrentThreadId();
 
         public double CurrentMemoryLoad()
         {
@@ -128,47 +107,34 @@ namespace FourierTransas
             var processThread = _process.Threads.Cast<ProcessThread>().First(p => p.Id == GetCurrentThreadId());
             var t1 = processThread.TotalProcessorTime;
             var p1 = _process.TotalProcessorTime;
-            int x =_ramSamples.Count + 1;
+            int x = _ramSamples.Count + 1;
             _ramSamples.Add(new DataPoint(x, 100 * Environment.WorkingSet / (long) _info.TotalPhysicalMemory));
             lock (ThreadModel.SyncRoot)
             {
                 (ThreadModel.Series[1] as LineSeries).Points.Add(new DataPoint(x,
                     100 * (ChartControl.CounterValue)));
                 (ThreadModel.Series[3] as LineSeries).Points.Add(new DataPoint(x,
-                    100 * _calculationService.CounterValue));
+                    100 * CalculationService.CounterValue));
             }
-            _cpuSamples.Add(new DataPoint(x,_cpuCounter.NextValue()/Environment.ProcessorCount));
-            double v = (processThread.UserProcessorTime - t1) / (_process.UserProcessorTime - p1);
+
+            _cpuSamples.Add(new DataPoint(x, _cpuCounter.NextValue() / Environment.ProcessorCount));
+            CounterValue = (processThread.UserProcessorTime - t1) / (_process.UserProcessorTime - p1) /
+                           Environment.ProcessorCount;
             lock (ThreadModel.SyncRoot)
             {
-                (ThreadModel.Series[2] as LineSeries).Points.Add(new DataPoint(x, 100 * v));
+                (ThreadModel.Series[2] as LineSeries).Points.Add(new DataPoint(x, 100 * CounterValue));
             }
         }
 
-        private readonly int cpuLimit = 10;
-        
-
-        private void CheckCPULimit()
+        private readonly int cpuLimit = 5;
+        private void CheckCPULimit(object sender, EventArgs e)
         {
             Func<double, double> f = d =>
             {
                 _timer.Interval = d;
                 return CounterValue - cpuLimit;
             };
-            _timer.Interval = MathNet.Numerics.RootFinding.Bisection.FindRoot(f, 200, 800, 3, 3);
+            _timer.Interval = MathNet.Numerics.RootFinding.Bisection.FindRoot(f, 200, 1000, 3, 3);
         }
-
-        [DllImport("Kernel32.dll")]
-        private static extern uint GetCurrentThreadId();
-
-        [DllImport("Kernel32.dll")]
-        private static extern IntPtr GetCurrentThread();
-
-        [DllImport("Kernel32.dll")]
-        private static extern bool GetThreadTimes(IntPtr hThread,
-            out FILETIME lpCreationTime, out FILETIME lpExitTime, out FILETIME lpKernelTime, out FILETIME lpUserTime);
-
-        [DllImport("Kernel32.dll")]
-        private static extern bool QueryThreadCycleTime(IntPtr ThreadHandle, out ulong CycleTime);
     }
 }

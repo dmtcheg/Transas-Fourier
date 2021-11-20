@@ -1,13 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows.Threading;
-using NickStrupat;
 using OxyPlot;
-using OxyPlot.Legends;
-using OxyPlot.Series;
 using OxyPlot.SkiaSharp;
 using SkiaSharp;
 

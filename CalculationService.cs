@@ -17,10 +17,10 @@ namespace FourierTransas
     {
         public List<PlotModel> PlotModels { get; private set; }
         private List<DataPoint>[] points;
-        public double CounterValue { get; set; }
         private int length;
         private Timer _timer;
         public IntPtr ThreadId { get; private set; }
+        public double CounterValue { get; private set; }
         PerformanceCounter _cpuCounter =
             new PerformanceCounter("Process", "% Processor Time", Process.GetCurrentProcess().ProcessName);
         Random r = new Random();
@@ -39,9 +39,9 @@ namespace FourierTransas
             points = PlotModels.Select(m => (m.Series[0] as LineSeries).Points).ToArray();
             length = points[0].Count;
             
-            _timer= new Timer(2000);
+            _timer= new Timer(500);
             _timer.Elapsed += (obj, args) => UpdatePoints();
-            //_timer.Elapsed += (obj, args) => CheckCPULimit();
+            _timer.Elapsed += (obj, args) => CheckCPULimit();
         }
 
         public void OnStart()
@@ -58,7 +58,10 @@ namespace FourierTransas
         {
             _timer.Enabled = false;
         }
-
+        
+        [DllImport("Kernel32.dll")]
+        public static extern uint GetCurrentThreadId();
+        
         private void UpdatePoints()
         {
             var process = Process.GetCurrentProcess(); 
@@ -84,9 +87,7 @@ namespace FourierTransas
                     }
                 }
             }
-
-            // to %
-            CounterValue = (processThread.UserProcessorTime - t1) / (process.UserProcessorTime - p1);
+            CounterValue = (processThread.UserProcessorTime - t1) / (process.UserProcessorTime - p1)/Environment.ProcessorCount;
         }
 
         private readonly int cpuLimit = 20;
@@ -95,14 +96,9 @@ namespace FourierTransas
             Func<double, double> f = d =>
             {
                 _timer.Interval = d;
-                return CounterValue;
+                return CounterValue - cpuLimit;
             };
-            _timer.Interval = MathNet.Numerics.RootFinding.Bisection.FindRoot(f, 50, 600, 3, 3);
+            _timer.Interval = MathNet.Numerics.RootFinding.Bisection.FindRoot(f, 50, 600, 3, 5);
         }
-
-        [DllImport("Kernel32.dll")]
-        public static extern uint GetCurrentThreadId();
-        [DllImport("Kernel32.dll")]
-        private static extern IntPtr GetCurrentThread();
     }
 }

@@ -1,12 +1,10 @@
 ﻿using OxyPlot;
-using OxyPlot.Series;
 using OxyPlot.SkiaSharp.Wpf;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
-using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,20 +15,17 @@ using System.Windows.Threading;
 
 namespace FourierTransas
 {
+    /// <summary>
+    /// эмулирует построение и обновление графика сигнала
+    /// </summary>
     public partial class ChartControl : UserControl
     {
         private PlotView[] plots;
         private DispatcherTimer _dTimer;
-        //private CalculationService _service;
 
         [DllImport("Kernel32.dll")]
         public static extern uint GetCurrentThreadId();
-        [DllImport("Kernel32.dll")]
-        private static extern IntPtr GetCurrentThread();
         
-        /// <summary>
-        /// эмулирует построение и обновление графика сигнала
-        /// </summary>
         public ChartControl()
         {
             InitializeComponent();
@@ -45,26 +40,21 @@ namespace FourierTransas
                 PlotView2
             };
 
-            CalculationService service = null;
-            //todo
-
-            // var calcThreadId =IntPtr.Zero;
-            // var calcThread = new Thread(()=>
-            // {
-            //     service = new CalculationService();
-            //     service.OnStart();
-            // });
-            // calcThread.Priority = ThreadPriority.AboveNormal;
-            // calcThread.IsBackground = true;
-            // calcThread.Start();
-            
-            service = new CalculationService();
-            Task t = Task.Factory.StartNew(() =>
+            CalculationService service = new CalculationService();
+            var calcThread = new Thread(()=>
             {
                 service.OnStart();
-            }, TaskCreationOptions.LongRunning);
+            });
+            calcThread.Priority = ThreadPriority.AboveNormal;
+            calcThread.IsBackground = true;
+            calcThread.Start();
             
-            PerfControl.Content = new PerformanceControl(GetCurrentThreadId(), service);
+            // Task t = Task.Factory.StartNew(() =>
+            // {
+            //     service.OnStart();
+            // }, TaskCreationOptions.LongRunning);
+            
+            PerfControl.Content = new PerformanceControl(service);
 
             for (int i = 0; i < plots.Length; i++)
             {
@@ -78,19 +68,18 @@ namespace FourierTransas
         }
         
         public static double CounterValue { get; private set; }
-        private PerformanceCounter _timeCounter = new PerformanceCounter();
+        private Process _process = Process.GetCurrentProcess();
         private void SignalPlot(object sender, EventArgs e)
         {
-            var process = Process.GetCurrentProcess();
-            var processThread = process.Threads.Cast<ProcessThread>().First(p => p.Id == GetCurrentThreadId());
+            var processThread = _process.Threads.Cast<ProcessThread>().First(p => p.Id == GetCurrentThreadId());
             var t1 = processThread.TotalProcessorTime;
-            var p1 = process.TotalProcessorTime;
+            var p1 = _process.TotalProcessorTime;
             
             for (int i = 0; i < plots.Length; i++)
             {
                 plots[i].InvalidatePlot(true);
             }
-            CounterValue = (processThread.UserProcessorTime - t1) / (process.UserProcessorTime - p1);
+            CounterValue = (processThread.UserProcessorTime - t1) / (_process.UserProcessorTime - p1)/Environment.ProcessorCount;
         }
     }
 }

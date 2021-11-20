@@ -1,14 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows.Threading;
 using OxyPlot;
-using OxyPlot.Legends;
-using OxyPlot.Series;
 using OxyPlot.SkiaSharp;
 using SkiaSharp;
 
@@ -16,7 +9,6 @@ namespace FourierTransas
 {
     public partial class ResourceControl : UserControl
     {
-        //private MonitorService _service;
         private DispatcherTimer _dTimer;
 
         public ResourceControl(MonitorService service)
