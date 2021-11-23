@@ -5,10 +5,19 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Media;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace FourierTransas
 {
     public partial class App : Application
     {
+        // protected override void OnStartup(StartupEventArgs e)
+        // {
+        //     base.OnStartup(e);
+        //     var host = Host.CreateDefaultBuilder()
+        //         .ConfigureServices((_, services) => services.AddSingleton<CalculationService>()).Build();
+        // }
     }
 }

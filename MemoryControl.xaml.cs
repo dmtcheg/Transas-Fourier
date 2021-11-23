@@ -7,7 +7,7 @@ using SkiaSharp;
 
 namespace FourierTransas
 {
-    public partial class MemoryControl : UserControl
+    public partial class MemoryControl : UserControl, IDisposable
     {
         private DispatcherTimer _dTimer;
 
@@ -29,6 +29,10 @@ namespace FourierTransas
         private void ResourceUsagePlot()
         {
             RamPlotView.InvalidatePlot(true);
+        }
+
+        public void Dispose()
+        {
         }
     }
 }

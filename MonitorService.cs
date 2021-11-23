@@ -28,6 +28,8 @@ namespace FourierTransas
         Process _process = Process.GetCurrentProcess();
         private List<DataPoint> _cpuSamples;
         private List<DataPoint> _ramSamples;
+        private List<List<DataPoint>> _threadSamples;
+        // todo: цикличная коллекция
         public PlotModel ThreadModel { get; private set; }
         public PlotModel RamModel { get; private set; }
         public double CounterValue { get; private set; }
@@ -47,7 +49,7 @@ namespace FourierTransas
                 {Color = OxyColors.Blue, Title = "recource monitor", Decimator = Decimator.Decimate});
             ThreadModel.Series.Add(new LineSeries()
                 {Color = OxyColors.Brown, Title = "calculation", Decimator = Decimator.Decimate});
-
+            
             ThreadModel.Legends.Add(new Legend
             {
                 LegendPlacement = LegendPlacement.Outside,
@@ -55,7 +57,12 @@ namespace FourierTransas
                 LegendFontSize = 12
             });
             _cpuSamples = (ThreadModel.Series[0] as LineSeries).Points;
-
+            _threadSamples = new List<List<DataPoint>>(ThreadModel.Series.Count - 1);
+            for (int i = 1; i < ThreadModel.Series.Count; i++)
+            {
+                _threadSamples.Add((ThreadModel.Series[i] as LineSeries).Points);
+            }
+            
             RamModel = new PlotModel()
             {
                 Title = "Memory",
@@ -82,7 +89,19 @@ namespace FourierTransas
 
         public void OnStop()
         {
+            //todo: не работает обновление plotview
             _timer.Enabled = false;
+            ThreadModel = new PlotModel();
+            var cpuSeries = new LineSeries();
+            cpuSeries.Points.AddRange(_cpuSamples);
+            ThreadModel.Series.Add(new LineSeries() {ItemsSource = _cpuSamples});
+            foreach (var sample in _threadSamples)
+            {
+                ThreadModel.Series.Add(new LineSeries() {ItemsSource = sample});
+            }
+
+            RamModel = new PlotModel();
+            RamModel.Series.Add(new LineSeries() {ItemsSource = _ramSamples});
         }
 
         public void Dispose()
@@ -114,9 +133,9 @@ namespace FourierTransas
             _ramSamples.Add(new DataPoint(x, 100 * Environment.WorkingSet / (long) _info.TotalPhysicalMemory));
             lock (ThreadModel.SyncRoot)
             {
-                (ThreadModel.Series[1] as LineSeries).Points.Add(new DataPoint(x,
+                _threadSamples[0].Add(new DataPoint(x,
                     100 * (ChartControl.CounterValue)));
-                (ThreadModel.Series[3] as LineSeries).Points.Add(new DataPoint(x,
+                _threadSamples[2].Add(new DataPoint(x,
                     100 * CalculationService.CounterValue));
             }
 
@@ -124,10 +143,9 @@ namespace FourierTransas
                            Environment.ProcessorCount;
             lock (ThreadModel.SyncRoot)
             {
-                (ThreadModel.Series[2] as LineSeries).Points.Add(new DataPoint(x, 100 * CounterValue));
+                _threadSamples[1].Add(new DataPoint(x, 100 * CounterValue));
             }
             _cpuSamples.Add(new DataPoint(x, _cpuCounter.NextValue() / Environment.ProcessorCount));
-
         }
 
         public double CpuLimit { get; set; } = 5;

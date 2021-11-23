@@ -49,7 +49,7 @@ namespace FourierTransas
             calcThread.Priority = ThreadPriority.AboveNormal;
             calcThread.IsBackground = true;
             calcThread.Start();
-            
+            calcThread.Join();
             // Task t = Task.Factory.StartNew(() =>
             // {
             //     service.OnStart();

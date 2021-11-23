@@ -18,7 +18,7 @@ namespace FourierTransas
     /// </summary>
     public partial class PerformanceControl : UserControl
     {
-        private CalculationService _service;
+        private MonitorService _monitor;
         private DispatcherTimer _dTimer;
         private List<BarItem> items;
 
@@ -28,8 +28,7 @@ namespace FourierTransas
 
             SkiaRenderContext rc = new SkiaRenderContext() {SkCanvas = new SKCanvas(new SKBitmap(300, 300))};
             rc.RenderTarget = RenderTarget.Screen;
-
-            _service = service;
+            _monitor = new MonitorService(service);
 
             var resourceModel = new PlotModel();
             var s = new BarSeries();
@@ -66,9 +65,9 @@ namespace FourierTransas
                 Window resourceWindow = new Window
                 {
                     Title = "Использование ресурсов",
-                    Content = new ResourceControl(_service),
+                    Content = new ResourceControl(_monitor),
                 };
-                resourceWindow.Closed += (o, args) => (resourceWindow.Content as ResourceControl).Dispose();
+                resourceWindow.Closed += (o, args) => _monitor.OnStop();
                 resourceWindow.Show();
                 Dispatcher.Run();
             });
