@@ -6,11 +6,9 @@ using OxyPlot;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
-using System.Timers;
 using OxyPlot.Axes;
 using OxyPlot.Legends;
 using OxyPlot.Series;
-using Timer = System.Timers.Timer;
 
 namespace Services
 {
@@ -22,6 +20,7 @@ namespace Services
         public CalculationService CalculationService { get; private set; }
         
         private Timer _timer;
+        private int _period;
         static PerformanceCounter _cpuCounter =
             new PerformanceCounter("Process", "% Processor Time", Process.GetCurrentProcess().ProcessName);
         static ComputerInfo _info = new ComputerInfo();
@@ -103,20 +102,24 @@ namespace Services
             // _items = (BarModel.Series[0] as BarSeries).Items;
 
             // todo: один таймер у всех сервисов?
-            _timer = new Timer(1000);
-            _timer.Elapsed += CpuRamUsage;
-            _timer.Elapsed += CheckCPULimit;
+            
         }
 
         public void OnStart()
         {
             Thread.BeginThreadAffinity();
-            _timer.Enabled = true;
+            var callback = new TimerCallback((state) =>
+            {
+                CpuRamUsage();
+                CheckCPULimit();
+            });
+            _period = 1000;
+            _timer = new Timer(callback, null, 0,_period);
         }
 
         public void OnStop()
         {
-            _timer.Enabled = false;
+            _timer.Dispose();
             CreatePlotModel();
         }
 
@@ -195,7 +198,7 @@ namespace Services
         }
 
         // todo: https://github.com/openhardwaremonitor/openhardwaremonitor/tree/master/Collections
-        private void CpuRamUsage(object sender, ElapsedEventArgs e)
+        private void CpuRamUsage()
         {
             _cpuCounter.NextValue();
             var pThreads = Process.GetCurrentProcess().Threads.Cast<ProcessThread>().ToArray();
@@ -222,19 +225,20 @@ namespace Services
             }
         }
 
-        public double CpuLimit { get; set; } = 5;
-//todo: add "mean" counterValue
-        private void CheckCPULimit(object sender, EventArgs e)
+        public double CpuLimit { get; set; } = 7;
+        //todo: maybe add "mean" counterValue
+        private void CheckCPULimit()
         {
             Func<double, double> f = d =>
             {
-                _timer.Interval = d;
+                _period = (int)d;
+                _timer.Change(0, _period);
                 return CounterValue - CpuLimit;
             };
-            //todo:
             try
             {
-                _timer.Interval = MathNet.Numerics.RootFinding.Bisection.FindRoot(f, 200, 1000, 3, 3);
+                _period = (int)MathNet.Numerics.RootFinding.Bisection.FindRoot(f, 200, 1000, 3, 4);
+                _timer.Change(0, _period);
             }
             catch
             {

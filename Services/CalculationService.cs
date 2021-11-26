@@ -9,7 +9,6 @@ using MathNet.Numerics;
 using MathNet.Numerics.IntegralTransforms;
 using OxyPlot;
 using OxyPlot.Series;
-using Timer = System.Timers.Timer;
 
 namespace Services
 {
@@ -19,10 +18,13 @@ namespace Services
         private List<DataPoint>[] points;
         private int length;
         private Timer _timer;
+        private int _period;
         public double CounterValue { get; private set; }
-            PerformanceCounter _cpuCounter =
-                new PerformanceCounter("Process", "% Processor Time", Process.GetCurrentProcess().ProcessName);
-            Random r = new Random();
+
+        PerformanceCounter _cpuCounter =
+            new PerformanceCounter("Process", "% Processor Time", Process.GetCurrentProcess().ProcessName);
+
+        Random r = new Random();
 
         public CalculationService()
         {
@@ -35,34 +37,36 @@ namespace Services
             PlotModels = models.Select(m => m.Plot).ToList();
             points = PlotModels.Select(m => (m.Series[0] as LineSeries).Points).ToArray();
             length = points[0].Count;
-            
-            _timer= new Timer(400);
-            _timer.Elapsed += UpdatePoints;
-            _timer.Elapsed += CheckCPULimit;
         }
 
         public void OnStart()
         {
             Thread.BeginThreadAffinity();
-            _timer.Enabled = true;
+            var callback = new TimerCallback((state) =>
+            {
+                UpdatePoints();
+                CheckCPULimit();
+            });
+            _period = 500;
+            _timer = new Timer(callback, null, 0, _period);
         }
 
         public void OnStop()
         {
-            _timer.Enabled = false;
+            _timer.Dispose();
         }
-        
+
         [DllImport("Kernel32.dll")]
         public static extern uint GetCurrentThreadId();
-        
-        private void UpdatePoints(object sender, EventArgs e)
+
+        private void UpdatePoints()
         {
             _cpuCounter.NextValue();
-            var process = Process.GetCurrentProcess(); 
+            var process = Process.GetCurrentProcess();
             var processThread = process.Threads.Cast<ProcessThread>().First(p => p.Id == GetCurrentThreadId());
             var p1 = process.UserProcessorTime;
             var t1 = processThread.UserProcessorTime;
-            
+
             double[] gen = Generate.Sinusoidal(length, length * 2, r.Next(0, 199999), r.Next(0, 100));
             Complex[] complex = new Complex[length];
             for (int j = 0; j < length; j++) complex[j] = new Complex(gen[j], 0);
@@ -81,22 +85,25 @@ namespace Services
                     }
                 }
             }
-            CounterValue = _cpuCounter.NextValue()/Environment.ProcessorCount * 
-                (processThread.UserProcessorTime -t1) / (process.UserProcessorTime - p1);
+
+            CounterValue = _cpuCounter.NextValue() / Environment.ProcessorCount *
+                (processThread.UserProcessorTime - t1) / (process.UserProcessorTime - p1);
         }
 
         public double CpuLimit { get; set; } = 30;
 
-        private void CheckCPULimit(object sender, EventArgs e)
+        private void CheckCPULimit()
         {
             Func<double, double> f = d =>
             {
-                _timer.Interval = d;
+                _period = (int)d;
+                _timer.Change(0, _period);
                 return CounterValue - CpuLimit;
             };
             try
             {
-                _timer.Interval = MathNet.Numerics.RootFinding.Bisection.FindRoot(f, 50, 600, 3, 5);
+                _period = (int)MathNet.Numerics.RootFinding.Bisection.FindRoot(f, 100, 800, 3, 4);
+                _timer.Change(0, _period);
             }
             catch
             {
