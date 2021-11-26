@@ -12,9 +12,9 @@ namespace FourierTransas
     public partial class ResourceControl : UserControl, IDisposable
     {
         private DispatcherTimer _dTimer;
-        private MonitorService _monitorService;
+        private Services.MonitorService _monitorService;
 
-        public ResourceControl(MonitorService monitor)
+        public ResourceControl(Services.MonitorService monitor)
         {
             _monitorService = monitor;
 

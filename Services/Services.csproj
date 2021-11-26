@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net5.0-windows</TargetFramework>
+        <UseWPF>true</UseWPF>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="ComputerInfo" Version="0.1.0-prerelease" />
+      <PackageReference Include="MathNet.Numerics" Version="4.15.0" />
+      <PackageReference Include="OxyPlot.Core" Version="2.1.0" />
+      <PackageReference Include="OxyPlot.SkiaSharp" Version="2.1.0" />
+    </ItemGroup>
+
+</Project>

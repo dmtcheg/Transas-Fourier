@@ -11,19 +11,18 @@ using OxyPlot;
 using OxyPlot.Series;
 using Timer = System.Timers.Timer;
 
-namespace FourierTransas
+namespace Services
 {
-    public class CalculationService : IDisposable
+    public class CalculationService : IService
     {
         public List<PlotModel> PlotModels { get; private set; }
         private List<DataPoint>[] points;
         private int length;
         private Timer _timer;
-        public IntPtr ThreadId { get; private set; }
         public double CounterValue { get; private set; }
-        PerformanceCounter _cpuCounter =
-            new PerformanceCounter("Process", "% Processor Time", Process.GetCurrentProcess().ProcessName);
-        Random r = new Random();
+            PerformanceCounter _cpuCounter =
+                new PerformanceCounter("Process", "% Processor Time", Process.GetCurrentProcess().ProcessName);
+            Random r = new Random();
 
         public CalculationService()
         {
@@ -37,9 +36,9 @@ namespace FourierTransas
             points = PlotModels.Select(m => (m.Series[0] as LineSeries).Points).ToArray();
             length = points[0].Count;
             
-            _timer= new Timer(500);
-            _timer.Elapsed += (obj, args) => UpdatePoints();
-            _timer.Elapsed += (obj, args) => CheckCPULimit();
+            _timer= new Timer(400);
+            _timer.Elapsed += UpdatePoints;
+            _timer.Elapsed += CheckCPULimit;
         }
 
         public void OnStart()
@@ -52,20 +51,16 @@ namespace FourierTransas
         {
             _timer.Enabled = false;
         }
-
-        public void Dispose()
-        {
-            _timer.Enabled = false;
-        }
         
         [DllImport("Kernel32.dll")]
         public static extern uint GetCurrentThreadId();
         
-        private void UpdatePoints()
+        private void UpdatePoints(object sender, EventArgs e)
         {
+            _cpuCounter.NextValue();
             var process = Process.GetCurrentProcess(); 
-            var p1 = process.UserProcessorTime;
             var processThread = process.Threads.Cast<ProcessThread>().First(p => p.Id == GetCurrentThreadId());
+            var p1 = process.UserProcessorTime;
             var t1 = processThread.UserProcessorTime;
             
             double[] gen = Generate.Sinusoidal(length, length * 2, r.Next(0, 199999), r.Next(0, 100));
@@ -86,18 +81,26 @@ namespace FourierTransas
                     }
                 }
             }
-            CounterValue = (processThread.UserProcessorTime - t1) / (process.UserProcessorTime - p1)/Environment.ProcessorCount;
+            CounterValue = _cpuCounter.NextValue()/Environment.ProcessorCount * 
+                (processThread.UserProcessorTime -t1) / (process.UserProcessorTime - p1);
         }
 
         public double CpuLimit { get; set; } = 30;
-        private void CheckCPULimit()
+
+        private void CheckCPULimit(object sender, EventArgs e)
         {
             Func<double, double> f = d =>
             {
                 _timer.Interval = d;
                 return CounterValue - CpuLimit;
             };
-            _timer.Interval = MathNet.Numerics.RootFinding.Bisection.FindRoot(f, 50, 600, 3, 5);
+            try
+            {
+                _timer.Interval = MathNet.Numerics.RootFinding.Bisection.FindRoot(f, 50, 600, 3, 5);
+            }
+            catch
+            {
+            }
         }
     }
 }

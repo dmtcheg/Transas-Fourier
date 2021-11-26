@@ -18,17 +18,18 @@ namespace FourierTransas
     /// </summary>
     public partial class PerformanceControl : UserControl
     {
-        private MonitorService _monitor;
+        private Services.MonitorService _monitor;
         private DispatcherTimer _dTimer;
         private List<BarItem> items;
 
-        public PerformanceControl(CalculationService service)
+        public PerformanceControl(Services.CalculationService service)
         {
             InitializeComponent();
 
             SkiaRenderContext rc = new SkiaRenderContext() {SkCanvas = new SKCanvas(new SKBitmap(300, 300))};
             rc.RenderTarget = RenderTarget.Screen;
-            _monitor = new MonitorService(service);
+            //todo: review
+            _monitor = new Services.MonitorService(service, ChartControl.GetCounterValue);
 
             var resourceModel = new PlotModel();
             var s = new BarSeries();
@@ -46,7 +47,7 @@ namespace FourierTransas
             (PerformancePlotView.Model as IPlotModel).Render(rc, PerformancePlotView.Model.PlotArea);
 
             _dTimer = new DispatcherTimer(DispatcherPriority.Render);
-            _dTimer.Interval = TimeSpan.FromMilliseconds(500);
+            _dTimer.Interval = TimeSpan.FromMilliseconds(1000);
             _dTimer.Tick += (sender, args) => PerformanceBar();
             _dTimer.IsEnabled = true;
         }

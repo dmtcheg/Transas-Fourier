@@ -11,7 +11,7 @@ namespace FourierTransas
     {
         private DispatcherTimer _dTimer;
 
-        public MemoryControl(MonitorService service)
+        public MemoryControl(Services.MonitorService service)
         {
             InitializeComponent();
             SkiaRenderContext rc = new SkiaRenderContext() {SkCanvas = new SKCanvas(new SKBitmap(400, 200))};
