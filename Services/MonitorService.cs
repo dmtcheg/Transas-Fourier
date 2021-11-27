@@ -18,6 +18,7 @@ namespace Services
     public class MonitorService : IService
     {
         public CalculationService CalculationService { get; private set; }
+        private CpuCounterService _counterService;
         
         private Timer _timer;
         private int _period;
@@ -39,10 +40,12 @@ namespace Services
         public double CounterValue { get; private set; }
         private Func<double> _mainCounterValue;
 
-        public MonitorService(CalculationService service, Func<double> mainCounterValue)
+        public MonitorService(CalculationService service, Func<double> mainCounterValue, IService counter)
         {
             CalculationService = service;
+            _counterService = counter as CpuCounterService;;
             _mainCounterValue = mainCounterValue;
+            
             ThreadModel = new PlotModel
             {
                 Title = "CPU",
@@ -111,8 +114,9 @@ namespace Services
             var callback = new TimerCallback((state) =>
             {
                 CpuRamUsage();
-                CheckCPULimit();
+                //CheckCPULimit();
             });
+            // часто?
             _period = 1000;
             _timer = new Timer(callback, null, 0,_period);
         }
@@ -199,8 +203,7 @@ namespace Services
 
         // todo: https://github.com/openhardwaremonitor/openhardwaremonitor/tree/master/Collections
         private void CpuRamUsage()
-        {
-            _cpuCounter.NextValue();
+        {;
             var pThreads = Process.GetCurrentProcess().Threads.Cast<ProcessThread>().ToArray();
             var processThread = pThreads.First(p => p.Id == GetCurrentThreadId());
             
@@ -216,16 +219,16 @@ namespace Services
                 _threadSamples[0].Add(new DataPoint(x,_mainCounterValue()));
                 _threadSamples[2].Add(new DataPoint(x, CalculationService.CounterValue));
             }
-            var nextValue = _cpuCounter.NextValue()/Environment.ProcessorCount;
-            _cpuSamples.Add(new DataPoint(x, nextValue));
-            CounterValue = nextValue * (processThread.UserProcessorTime-t1) / (_process.UserProcessorTime-p1);
+            
+            CounterValue = _counterService.Value * (processThread.UserProcessorTime-t1) / (_process.UserProcessorTime-p1);
             lock (ThreadModel.SyncRoot)
             {
                 _threadSamples[1].Add(new DataPoint(x, CounterValue));
             }
+            _cpuSamples.Add(new DataPoint(x, _counterService.Value));
         }
 
-        public double CpuLimit { get; set; } = 7;
+        public double CpuLimit { get; set; } = 4;
         //todo: maybe add "mean" counterValue
         private void CheckCPULimit()
         {
@@ -237,7 +240,7 @@ namespace Services
             };
             try
             {
-                _period = (int)MathNet.Numerics.RootFinding.Bisection.FindRoot(f, 200, 1000, 3, 4);
+                _period = (int)MathNet.Numerics.RootFinding.Bisection.FindRoot(f, 500, 1000, 2, 4);
                 _timer.Change(0, _period);
             }
             catch

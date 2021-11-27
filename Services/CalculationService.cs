@@ -25,9 +25,11 @@ namespace Services
             new PerformanceCounter("Process", "% Processor Time", Process.GetCurrentProcess().ProcessName);
 
         Random r = new Random();
+        private CpuCounterService _counterService;
 
-        public CalculationService()
+        public CalculationService(IService counterService)
         {
+            _counterService = counterService as CpuCounterService;
             FFTModel[] models = new FFTModel[]
             {
                 new(2000, 15),
@@ -61,7 +63,6 @@ namespace Services
 
         private void UpdatePoints()
         {
-            _cpuCounter.NextValue();
             var process = Process.GetCurrentProcess();
             var processThread = process.Threads.Cast<ProcessThread>().First(p => p.Id == GetCurrentThreadId());
             var p1 = process.UserProcessorTime;
@@ -86,7 +87,7 @@ namespace Services
                 }
             }
 
-            CounterValue = _cpuCounter.NextValue() / Environment.ProcessorCount *
+            CounterValue = _counterService.Value *
                 (processThread.UserProcessorTime - t1) / (process.UserProcessorTime - p1);
         }
 

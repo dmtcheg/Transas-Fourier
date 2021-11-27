@@ -22,14 +22,14 @@ namespace FourierTransas
         private DispatcherTimer _dTimer;
         private List<BarItem> items;
 
-        public PerformanceControl(Services.CalculationService service)
+        public PerformanceControl(Services.CalculationService service, Services.CpuCounterService counterService)
         {
             InitializeComponent();
 
             SkiaRenderContext rc = new SkiaRenderContext() {SkCanvas = new SKCanvas(new SKBitmap(300, 300))};
             rc.RenderTarget = RenderTarget.Screen;
             //todo: review
-            _monitor = new Services.MonitorService(service, ChartControl.GetCounterValue);
+            _monitor = new Services.MonitorService(service, ChartControl.GetCounterValue, counterService);
 
             var resourceModel = new PlotModel();
             var s = new BarSeries();
@@ -54,8 +54,8 @@ namespace FourierTransas
 
         private void PerformanceBar()
         {
-            items[0] = new BarItem(MonitorService.CurrentMemoryLoad());
-            items[1] = new BarItem(MonitorService.CurrentCpuLoad());
+            items[0] = new BarItem(Services.MonitorService.CurrentMemoryLoad());
+            items[1] = new BarItem(Services.MonitorService.CurrentCpuLoad());
             PerformancePlotView.InvalidatePlot(true);
         }
 

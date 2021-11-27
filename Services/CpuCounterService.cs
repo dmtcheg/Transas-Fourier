@@ -34,7 +34,7 @@ namespace Services
             _counter.NextValue();
             // todo:
             Thread.Sleep(500);
-            Value = _counter.NextValue();
+            Value = _counter.NextValue()/Environment.ProcessorCount;
         }
     }
 }

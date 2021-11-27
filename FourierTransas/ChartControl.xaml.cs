@@ -23,8 +23,6 @@ namespace FourierTransas
     {
         private PlotView[] plots;
         private DispatcherTimer _dTimer;
-        PerformanceCounter _cpuCounter =
-            new PerformanceCounter("Process", "% Processor Time", Process.GetCurrentProcess().ProcessName);
         private Process _process = Process.GetCurrentProcess();
         private CpuCounterService _counterService;
 
@@ -46,14 +44,14 @@ namespace FourierTransas
                 PlotView1,
                 PlotView2
             };
-
-            Services.CalculationService service = new Services.CalculationService();
-            InitializeService(service);
-            Services.CpuCounterService counterService = new CpuCounterService(); 
-            InitializeService(counterService);
-            _counterService = counterService;
             
-            PerfControl.Content = new PerformanceControl(service);
+            Services.CpuCounterService counterService = new CpuCounterService(); 
+            InitializeService(counterService, ThreadPriority.Normal);
+            _counterService = counterService;
+            Services.CalculationService service = new Services.CalculationService(_counterService);
+            InitializeService(service);
+
+            PerfControl.Content = new PerformanceControl(service, counterService);
 
             for (int i = 0; i < plots.Length; i++)
             {
@@ -103,7 +101,7 @@ namespace FourierTransas
             try
             {
                 _dTimer.Interval =
-                    TimeSpan.FromMilliseconds(MathNet.Numerics.RootFinding.Bisection.FindRoot(f, 100, 600, 3, 4));
+                    TimeSpan.FromMilliseconds(MathNet.Numerics.RootFinding.Bisection.FindRoot(f, 200, 1000, 3, 5));
             }
             catch
             {
