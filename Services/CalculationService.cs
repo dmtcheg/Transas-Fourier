@@ -17,15 +17,15 @@ namespace Services
         public List<PlotModel> PlotModels { get; private set; }
         private List<DataPoint>[] points;
         private int length;
-        private Timer _timer;
-        private int _period;
-        public double CounterValue { get; private set; }
-
-        PerformanceCounter _cpuCounter =
-            new PerformanceCounter("Process", "% Processor Time", Process.GetCurrentProcess().ProcessName);
-
         Random r = new Random();
+
+        private System.Timers.Timer _timer;
+        private Timer _limitTimer;
+        private double _period;
+        private int _limitTimerPeriod;
+        public double CounterValue { get; private set; }
         private CpuCounterService _counterService;
+
 
         public CalculationService(IService counterService)
         {
@@ -44,18 +44,23 @@ namespace Services
         public void OnStart()
         {
             Thread.BeginThreadAffinity();
-            var callback = new TimerCallback((state) =>
-            {
-                UpdatePoints();
-                CheckCPULimit();
-            });
-            _period = 500;
-            _timer = new Timer(callback, null, 0, _period);
+            // var callback = new TimerCallback((state) =>
+            // {
+            //     UpdatePoints();
+            // });
+            
+            _timer = new System.Timers.Timer(500);
+            _timer.Elapsed += (obj, e) => UpdatePoints();
+            _timer.Enabled = true;
+
+            _limitTimer = new Timer(new TimerCallback((state) => CheckCPULimit()), null, 10000, 5000);
+            _limitTimerPeriod = 5000;
         }
 
         public void OnStop()
         {
             _timer.Dispose();
+            _limitTimer.Dispose();
         }
 
         [DllImport("Kernel32.dll")]
@@ -63,6 +68,8 @@ namespace Services
 
         private void UpdatePoints()
         {
+            Thread.BeginThreadAffinity();
+            
             var process = Process.GetCurrentProcess();
             var processThread = process.Threads.Cast<ProcessThread>().First(p => p.Id == GetCurrentThreadId());
             var p1 = process.UserProcessorTime;
@@ -92,22 +99,30 @@ namespace Services
         }
 
         public double CpuLimit { get; set; } = 30;
-
+        private double accuracy = 5;
+        private bool isRootFinding = false;
+        
+        //todo: fix limitation
         private void CheckCPULimit()
         {
             Func<double, double> f = d =>
             {
-                _period = (int)d;
-                _timer.Change(0, _period);
-                return CounterValue - CpuLimit;
+                _timer.Interval = d;
+                return Math.Abs(CounterValue - CpuLimit);
             };
-            try
+            
+            if (Math.Abs(CounterValue - CpuLimit) > accuracy && !isRootFinding)
             {
-                _period = (int)MathNet.Numerics.RootFinding.Bisection.FindRoot(f, 100, 800, 3, 4);
-                _timer.Change(0, _period);
-            }
-            catch
-            {
+                isRootFinding = true;
+                try
+                {
+                    _timer.Interval = MathNet.Numerics.RootFinding.Bisection.FindRoot(f, 100, 800, accuracy, 5);
+                }
+                catch
+                {
+                }
+
+                isRootFinding = false;
             }
         }
     }

@@ -166,17 +166,13 @@ namespace Services
             }
 
             RamModel = new PlotModel();
-            foreach (var s in ramSeries)
+            RamModel.Series.Add(new LineSeries()
             {
-                RamModel.Series.Add(new LineSeries()
-                {
-                    ItemsSource = ramSeries,
-                    Title = s.Title,
-                    Color = OxyColors.Red,
-                    Decimator = Decimator.Decimate
-                });
-            }
-            RamModel.Series.Add(new LineSeries() { ItemsSource = ramSeries });
+                ItemsSource = _ramSamples,
+                Title = "% RAM",
+                Color = OxyColors.Red,
+                Decimator = Decimator.Decimate
+            });
             foreach (var l in ramLegend)
             {
                 RamModel.Legends.Add(new Legend()
@@ -191,19 +187,11 @@ namespace Services
         [DllImport("Kernel32.dll")]
         private static extern uint GetCurrentThreadId();
 
-        public static double CurrentMemoryLoad()
-        {
-            return 100 * Environment.WorkingSet / (long)_info.TotalPhysicalMemory;
-        }
-
-        public static double CurrentCpuLoad()
-        {
-            return _cpuCounter.NextValue() / Environment.ProcessorCount;
-        }
-
         // todo: https://github.com/openhardwaremonitor/openhardwaremonitor/tree/master/Collections
         private void CpuRamUsage()
         {;
+            Thread.BeginThreadAffinity();
+            
             var pThreads = Process.GetCurrentProcess().Threads.Cast<ProcessThread>().ToArray();
             var processThread = pThreads.First(p => p.Id == GetCurrentThreadId());
             
@@ -211,7 +199,7 @@ namespace Services
             var p1 = _process.TotalProcessorTime;
             
             int x = _ramSamples.Count + 1;
-            _ramSamples.Add(new DataPoint(x, 100 * Environment.WorkingSet / (long)_info.TotalPhysicalMemory));
+            _ramSamples.Add(new DataPoint(x, _counterService.RamValue));
 
             //todo: msbuild. for .net framework?
             lock (ThreadModel.SyncRoot)

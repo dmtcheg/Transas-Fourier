@@ -19,6 +19,8 @@ namespace FourierTransas
     public partial class PerformanceControl : UserControl
     {
         private Services.MonitorService _monitor;
+        //todo: naming
+        private Services.CpuCounterService _counter;
         private DispatcherTimer _dTimer;
         private List<BarItem> items;
 
@@ -26,10 +28,11 @@ namespace FourierTransas
         {
             InitializeComponent();
 
+            _counter = counterService;
+            _monitor = new Services.MonitorService(service, ChartControl.GetCounterValue, counterService);
+
             SkiaRenderContext rc = new SkiaRenderContext() {SkCanvas = new SKCanvas(new SKBitmap(300, 300))};
             rc.RenderTarget = RenderTarget.Screen;
-            //todo: review
-            _monitor = new Services.MonitorService(service, ChartControl.GetCounterValue, counterService);
 
             var resourceModel = new PlotModel();
             var s = new BarSeries();
@@ -54,8 +57,8 @@ namespace FourierTransas
 
         private void PerformanceBar()
         {
-            items[0] = new BarItem(Services.MonitorService.CurrentMemoryLoad());
-            items[1] = new BarItem(Services.MonitorService.CurrentCpuLoad());
+            items[0] = new BarItem(_counter.RamValue);
+            items[1] = new BarItem(_counter.Value);
             PerformancePlotView.InvalidatePlot(true);
         }
 

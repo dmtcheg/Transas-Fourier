@@ -75,10 +75,11 @@ namespace FourierTransas
 
         public static double GetCounterValue() => CounterValue;
         public static double CounterValue { get; private set; }
-        public static double CpuLimit { get; set; } = 10;
 // как считать использование процессора? часть времени потоки простаивают
         private void SignalPlot(object sender, EventArgs e)
         {
+            Thread.BeginThreadAffinity();
+            
             var processThread = _process.Threads.Cast<ProcessThread>().First(p => p.Id == GetCurrentThreadId());
             var t1 = processThread.UserProcessorTime;
             var p1 = _process.UserProcessorTime;
@@ -90,7 +91,9 @@ namespace FourierTransas
 
             CounterValue = _counterService.Value/Environment.ProcessorCount * (processThread.UserProcessorTime - t1) / (_process.UserProcessorTime - p1);
         }
+        public static double CpuLimit { get; set; } = 10;
         
+        //todo: fix limitation
         private void CheckCPULimit(object sender, EventArgs e)
         {
             Func<double, double> f = d =>
@@ -100,8 +103,7 @@ namespace FourierTransas
             };
             try
             {
-                _dTimer.Interval =
-                    TimeSpan.FromMilliseconds(MathNet.Numerics.RootFinding.Bisection.FindRoot(f, 200, 1000, 3, 5));
+               MathNet.Numerics.RootFinding.Bisection.FindRoot(f, 200, 1000, 3, 5);
             }
             catch
             {
