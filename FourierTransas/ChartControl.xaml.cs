@@ -23,9 +23,10 @@ namespace FourierTransas
     {
         private PlotView[] plots;
         private DispatcherTimer _dTimer;
+        private Timer _limitTimer;
         private Process _process = Process.GetCurrentProcess();
         private CpuCounterService _counterService;
-
+        
         [DllImport("Kernel32.dll")]
         public static extern uint GetCurrentThreadId();
         
@@ -45,10 +46,10 @@ namespace FourierTransas
                 PlotView2
             };
             
-            Services.CpuCounterService counterService = new CpuCounterService(); 
+            CpuCounterService counterService = new CpuCounterService(); 
             InitializeService(counterService, ThreadPriority.Normal);
             _counterService = counterService;
-            Services.CalculationService service = new Services.CalculationService(_counterService);
+            CalculationService service = new CalculationService(_counterService);
             InitializeService(service);
 
             PerfControl.Content = new PerformanceControl(service, counterService);
@@ -61,8 +62,11 @@ namespace FourierTransas
             _dTimer = new DispatcherTimer(DispatcherPriority.Send);
             _dTimer.Interval = TimeSpan.FromMilliseconds(100);
             _dTimer.Tick += SignalPlot;
-            _dTimer.Tick += CheckCPULimit;
             _dTimer.IsEnabled = true;
+
+            _limitTimer = new Timer(new TimerCallback(state => CheckCPULimit()), null, 0, 5000);
+            processInitTime = _process.TotalProcessorTime;
+            threadTime = TimeSpan.Zero;
         }
 
         private void InitializeService(IService service, ThreadPriority priority = ThreadPriority.AboveNormal)
@@ -75,39 +79,42 @@ namespace FourierTransas
 
         public static double GetCounterValue() => CounterValue;
         public static double CounterValue { get; private set; }
-// как считать использование процессора? часть времени потоки простаивают
+        private TimeSpan threadTime;
+        private TimeSpan processInitTime;
+        
         private void SignalPlot(object sender, EventArgs e)
         {
             Thread.BeginThreadAffinity();
-            
+            _process.Refresh();
             var processThread = _process.Threads.Cast<ProcessThread>().First(p => p.Id == GetCurrentThreadId());
-            var t1 = processThread.UserProcessorTime;
-            var p1 = _process.UserProcessorTime;
+            var t1 = processThread.TotalProcessorTime;
             
             for (int i = 0; i < plots.Length; i++)
             {
                 plots[i].InvalidatePlot(true);
             }
 
-            CounterValue = _counterService.Value/Environment.ProcessorCount * (processThread.UserProcessorTime - t1) / (_process.UserProcessorTime - p1);
+            threadTime += processThread.TotalProcessorTime - t1;
+            CounterValue = _counterService.Value * threadTime / (_process.TotalProcessorTime - processInitTime);
         }
         public static double CpuLimit { get; set; } = 10;
-        
-        //todo: fix limitation
-        private void CheckCPULimit(object sender, EventArgs e)
+        private bool isRootFinding = false;
+
+        private void CheckCPULimit()
         {
             Func<double, double> f = d =>
             {
                 _dTimer.Interval = TimeSpan.FromMilliseconds(d);
+                Thread.Sleep((int)(d*10));
                 return CounterValue - CpuLimit;
             };
-            try
-            {
-               MathNet.Numerics.RootFinding.Bisection.FindRoot(f, 200, 1000, 3, 5);
-            }
-            catch
-            {
-            }
+            if (isRootFinding)
+                return;
+            isRootFinding = true;
+            double interval;
+            if (MathNet.Numerics.RootFinding.Bisection.TryFindRoot(f, 200, 1000, 3, 5, out interval))
+                _dTimer.Interval = TimeSpan.FromMilliseconds(interval);
+            isRootFinding = false;
         }
     }
 }

@@ -6,15 +6,16 @@ using OxyPlot;
 using OxyPlot.SkiaSharp;
 using SkiaSharp;
 using System.Windows;
+using Services;
 
 namespace FourierTransas
 {
     public partial class ResourceControl : UserControl, IDisposable
     {
         private DispatcherTimer _dTimer;
-        private Services.MonitorService _monitorService;
+        private MonitorService _monitorService;
 
-        public ResourceControl(Services.MonitorService monitor)
+        public ResourceControl(MonitorService monitor)
         {
             _monitorService = monitor;
 

@@ -19,6 +19,7 @@ namespace Services
         private int length;
         Random r = new Random();
 
+        Process _process = Process.GetCurrentProcess();
         private System.Timers.Timer _timer;
         private Timer _limitTimer;
         private double _period;
@@ -27,9 +28,9 @@ namespace Services
         private CpuCounterService _counterService;
 
 
-        public CalculationService(IService counterService)
+        public CalculationService(CpuCounterService counterService)
         {
-            _counterService = counterService as CpuCounterService;
+            _counterService = counterService;
             FFTModel[] models = new FFTModel[]
             {
                 new(2000, 15),
@@ -49,12 +50,14 @@ namespace Services
             //     UpdatePoints();
             // });
             
-            _timer = new System.Timers.Timer(500);
+            _timer = new System.Timers.Timer(100);
             _timer.Elapsed += (obj, e) => UpdatePoints();
             _timer.Enabled = true;
 
-            _limitTimer = new Timer(new TimerCallback((state) => CheckCPULimit()), null, 10000, 5000);
             _limitTimerPeriod = 5000;
+            _limitTimer = new Timer(new TimerCallback(state => CheckCPULimit()), null, 5000, _limitTimerPeriod);
+            
+            processInitTime = _process.TotalProcessorTime;
         }
 
         public void OnStop()
@@ -66,14 +69,16 @@ namespace Services
         [DllImport("Kernel32.dll")]
         public static extern uint GetCurrentThreadId();
 
+        private TimeSpan threadTime;
+        private TimeSpan processInitTime;
+        
         private void UpdatePoints()
         {
             Thread.BeginThreadAffinity();
             
-            var process = Process.GetCurrentProcess();
-            var processThread = process.Threads.Cast<ProcessThread>().First(p => p.Id == GetCurrentThreadId());
-            var p1 = process.UserProcessorTime;
-            var t1 = processThread.UserProcessorTime;
+            _process.Refresh();
+            var processThread = _process.Threads.Cast<ProcessThread>().First(p => p.Id == GetCurrentThreadId());
+            var t1 = processThread.TotalProcessorTime;
 
             double[] gen = Generate.Sinusoidal(length, length * 2, r.Next(0, 199999), r.Next(0, 100));
             Complex[] complex = new Complex[length];
@@ -93,37 +98,35 @@ namespace Services
                     }
                 }
             }
-
-            CounterValue = _counterService.Value *
-                (processThread.UserProcessorTime - t1) / (process.UserProcessorTime - p1);
+            threadTime += (processThread.TotalProcessorTime - t1);
+            CounterValue = _counterService.Value * threadTime / (_process.TotalProcessorTime - processInitTime);
         }
 
-        public double CpuLimit { get; set; } = 30;
-        private double accuracy = 5;
+        private double cpuLimit = 30;
+        public double CpuLimit
+        {
+            get => cpuLimit;
+            set => cpuLimit = value;
+        }
+
+        private double accuracy = 3;
         private bool isRootFinding = false;
         
-        //todo: fix limitation
         private void CheckCPULimit()
         {
             Func<double, double> f = d =>
             {
                 _timer.Interval = d;
-                return Math.Abs(CounterValue - CpuLimit);
+                Thread.Sleep((int)(10*d));
+                return CounterValue - cpuLimit;
             };
-            
-            if (Math.Abs(CounterValue - CpuLimit) > accuracy && !isRootFinding)
-            {
-                isRootFinding = true;
-                try
-                {
-                    _timer.Interval = MathNet.Numerics.RootFinding.Bisection.FindRoot(f, 100, 800, accuracy, 5);
-                }
-                catch
-                {
-                }
-
-                isRootFinding = false;
-            }
+            double interval;
+            if (isRootFinding)
+                return;
+            isRootFinding = true;
+            if (MathNet.Numerics.RootFinding.Bisection.TryFindRoot(f, 50, 800, accuracy, 5, out interval))
+                _timer.Interval = interval;
+            isRootFinding = false;
         }
     }
 }

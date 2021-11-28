@@ -41,7 +41,6 @@ namespace Services
         public void NextValue()
         {
             _counter.NextValue();
-            // todo:
             Thread.Sleep(500);
             Value = _counter.NextValue()/Environment.ProcessorCount;
         }

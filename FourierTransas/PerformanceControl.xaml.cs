@@ -10,6 +10,7 @@ using OxyPlot.Axes;
 using OxyPlot.Series;
 using OxyPlot.SkiaSharp;
 using SkiaSharp;
+using Services;
 
 namespace FourierTransas
 {
@@ -18,18 +19,17 @@ namespace FourierTransas
     /// </summary>
     public partial class PerformanceControl : UserControl
     {
-        private Services.MonitorService _monitor;
-        //todo: naming
-        private Services.CpuCounterService _counter;
+        private MonitorService _monitor;
+        private CpuCounterService _counter;
         private DispatcherTimer _dTimer;
         private List<BarItem> items;
 
-        public PerformanceControl(Services.CalculationService service, Services.CpuCounterService counterService)
+        public PerformanceControl(CalculationService service, CpuCounterService counterService)
         {
             InitializeComponent();
 
             _counter = counterService;
-            _monitor = new Services.MonitorService(service, ChartControl.GetCounterValue, counterService);
+            _monitor = new MonitorService(service, ChartControl.GetCounterValue, counterService);
 
             SkiaRenderContext rc = new SkiaRenderContext() {SkCanvas = new SKCanvas(new SKBitmap(300, 300))};
             rc.RenderTarget = RenderTarget.Screen;

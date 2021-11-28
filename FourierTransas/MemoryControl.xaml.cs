@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Threading;
 using OxyPlot;
 using OxyPlot.SkiaSharp;
+using Services;
 using SkiaSharp;
 
 namespace FourierTransas
@@ -11,7 +12,7 @@ namespace FourierTransas
     {
         private DispatcherTimer _dTimer;
 
-        public MemoryControl(Services.MonitorService service)
+        public MemoryControl(MonitorService service)
         {
             InitializeComponent();
             SkiaRenderContext rc = new SkiaRenderContext() {SkCanvas = new SKCanvas(new SKBitmap(400, 200))};
