@@ -96,7 +96,6 @@ namespace Services
             var callback = new TimerCallback((state) =>
             {
                 CpuRamUsage();
-                //CheckCPULimit();
             });
             _period = 1000;
             _timer = new Timer(callback, null, 0, _period);

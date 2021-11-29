@@ -45,10 +45,6 @@ namespace Services
         public void OnStart()
         {
             Thread.BeginThreadAffinity();
-            // var callback = new TimerCallback((state) =>
-            // {
-            //     UpdatePoints();
-            // });
             
             _timer = new System.Timers.Timer(100);
             _timer.Elapsed += (obj, e) => UpdatePoints();

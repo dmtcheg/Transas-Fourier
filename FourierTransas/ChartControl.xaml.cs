@@ -64,7 +64,7 @@ namespace FourierTransas
             _dTimer.Tick += SignalPlot;
             _dTimer.IsEnabled = true;
 
-            _limitTimer = new Timer(new TimerCallback(state => CheckCPULimit()), null, 0, 5000);
+            _limitTimer = new Timer(new TimerCallback(state => CheckCPULimit()), null, 5000, 5000);
             processInitTime = _process.TotalProcessorTime;
             threadTime = TimeSpan.Zero;
         }
@@ -112,7 +112,7 @@ namespace FourierTransas
                 return;
             isRootFinding = true;
             double interval;
-            if (MathNet.Numerics.RootFinding.Bisection.TryFindRoot(f, 200, 1000, 3, 5, out interval))
+            if (MathNet.Numerics.RootFinding.Bisection.TryFindRoot(f, 200, 1200, 3, 4, out interval))
                 _dTimer.Interval = TimeSpan.FromMilliseconds(interval);
             isRootFinding = false;
         }
