@@ -17,11 +17,10 @@ namespace FourierTransas
     /// <summary>
     /// потребление ресурсов процессора и оперативной памяти приложением
     /// </summary>
-    public partial class PerformanceControl : UserControl
+    public partial class PerformanceControl : TimerControl
     {
         private MonitorService _monitor;
         private CpuCounterService _counter;
-        private DispatcherTimer _dTimer;
         private List<BarItem> items;
 
         public PerformanceControl(CalculationService service, CpuCounterService counterService)

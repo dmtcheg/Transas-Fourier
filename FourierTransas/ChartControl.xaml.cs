@@ -19,10 +19,10 @@ namespace FourierTransas
     /// <summary>
     /// эмулирует построение и обновление графика сигнала
     /// </summary>
-    public partial class ChartControl : UserControl
+    public partial class ChartControl : TimerControl
     {
         private PlotView[] plots;
-        private DispatcherTimer _dTimer;
+        //private DispatcherTimer _dTimer;
         private Timer _limitTimer;
         private Process _process = Process.GetCurrentProcess();
         private CpuCounterService _counterService;

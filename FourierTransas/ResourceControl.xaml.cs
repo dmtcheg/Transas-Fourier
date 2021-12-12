@@ -10,9 +10,8 @@ using Services;
 
 namespace FourierTransas
 {
-    public partial class ResourceControl : UserControl, IDisposable
+    public partial class ResourceControl : TimerControl 
     {
-        private DispatcherTimer _dTimer;
         private MonitorService _monitorService;
 
         public ResourceControl(MonitorService monitor)
@@ -42,10 +41,6 @@ namespace FourierTransas
         private void ResourceUsagePlot(object sender, EventArgs e)
         {
             CpuPlotView.InvalidatePlot(true);
-        }
-
-        public void Dispose()
-        {
         }
 
         private void PlotRender_LimitChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
